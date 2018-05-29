@@ -147,9 +147,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Images\plp_1.png" />
-  </ItemGroup>
-  <ItemGroup>
     <Resource Include="Images\plp2.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
