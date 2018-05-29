@@ -36,7 +36,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Images\plp.ico</ApplicationIcon>
+    <ApplicationIcon>Images\plp2.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Gat.Controls.OpenDialog, Version=1.1.1.0, Culture=neutral, processorArchitecture=MSIL">
@@ -145,6 +145,12 @@
       <Project>{46ccca85-f74c-4a4d-b6d4-f5086f0715d0}</Project>
       <Name>SysMenu</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\plp_1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\plp2.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
