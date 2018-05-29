@@ -1,19 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using System.Reflection;
 using System.IO;
 using System.Windows;
+using System.ComponentModel;
+using Xceed.Wpf.Toolkit.PropertyGrid;
+using Xceed.Wpf.Toolkit.PropertyGrid.Editors;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
+
 
 namespace PlayListsParser
 {
-	public class AppSettings
+    [Description("Settings")]
+    public class AppSettings
 	{
-
 
 		#region Instance
 
@@ -25,13 +29,13 @@ namespace PlayListsParser
 
 		private static string _xmlFileName = @"Settings.xml";
 
-		private static string _xmlFilePath = System.IO.Path.Combine((System.IO.Path.GetDirectoryName(ExePath)), _xmlFileName);
+		private static readonly string XmlFilePath = System.IO.Path.Combine((System.IO.Path.GetDirectoryName(ExePath)) ?? throw new InvalidOperationException(), _xmlFileName);
 
 		private static readonly Lazy<AppSettings> _instance = new Lazy<AppSettings>(Load);
 
-		public static AppSettings Instance { get { return _instance.Value; } }
+		public static AppSettings Instance => _instance.Value;
 
-		private AppSettings()
+	    private AppSettings()
 		{
 			if (_subcribeOnExit && Application.Current != null)
 			{
@@ -53,32 +57,36 @@ namespace PlayListsParser
 			{
 				if (Store == SettingStore.File)
 				{
-					using (FileStream fs = new FileStream(_xmlFilePath, FileMode.Open))
+					using (FileStream fs = new FileStream(XmlFilePath, FileMode.Open))
 						sws = (AppSettings)Serializer.Deserialize(fs);
 				}
 				else
 				{
-					sws = Deserialize<AppSettings>(PlayListsParser.Properties.Settings.Default["AppSettings"].ToString());
+					sws = Deserialize<AppSettings>(Properties.Settings.Default["AppSettings"].ToString());
 				}
 			}
-			catch { }
-			return sws;
+		    catch
+		    {
+		        // ignored
+		    }
+
+		    return sws;
 		}
 
 		public void Save()
 		{
 			if (Store == SettingStore.File)
 			{
-				using (TextWriter twriter = new StreamWriter(_xmlFilePath))
+				using (TextWriter twriter = new StreamWriter(XmlFilePath))
 				{
-				  Serializer.Serialize(twriter, AppSettings.Instance);
+				  Serializer.Serialize(twriter, Instance);
 				  twriter.Close();
 				}
 			}
 			else
 			{
-				PlayListsParser.Properties.Settings.Default["AppSettings"] = Serialize<AppSettings>(AppSettings.Instance);
-				PlayListsParser.Properties.Settings.Default.Save();
+				Properties.Settings.Default["AppSettings"] = Serialize(Instance);
+				Properties.Settings.Default.Save();
 			}
 		}
 
@@ -152,25 +160,57 @@ namespace PlayListsParser
 		private static void App_Exit(object sender, ExitEventArgs e)
 		{
 			if (_instance != null)
-				AppSettings.Instance.Save();
+				Instance.Save();
 		}
 
-		#region Values
+        #region Values
 
-		public string PlaylistsFolder { get; set; }
+        [Category("General")]
+        [Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
+        public string PlaylistsFolder { get; set; }
 
-		public string OutputFolder { get; set; }
+        [Category("General")]
+        [Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
+        public string OutputFolder { get; set; }
 
-		public bool RemoveDuplicates { get; set; }
+        [Category("General")]
+        public bool RemoveDuplicates { get; set; }
 
+		[Category("General")]
+		[Description("This property is a complex property and has no default editor.")]
+        //[ExpandableObject]
 		public bool EmptyFolder { get; set; }
 
-		#endregion
+        ////[Editor(typeof(FirstNameEditor), typeof(FirstNameEditor))]
+        ////public string FirstName { get; set; }
 
+        ////[Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
+        ////public string LastName { get; set; }
 
-	}
+        #endregion
 
-	enum SettingStore
+    }
+    //Custom editors that are used as attributes MUST implement the ITypeEditor interface.
+    public class FirstNameEditor : ITypeEditor
+    {
+        public FrameworkElement ResolveEditor(PropertyItem propertyItem)
+        {
+            TextBox textBox = new TextBox {Background = new SolidColorBrush(Colors.Red)};
+
+            //create the binding from the bound property item to the editor
+            var binding = new Binding("Value")
+            {
+                Source = propertyItem,
+                ValidatesOnExceptions = true,
+                ValidatesOnDataErrors = true,
+                Mode = propertyItem.IsReadOnly ? BindingMode.OneWay : BindingMode.TwoWay
+            }; //bind to the Value property of the PropertyItem
+
+            BindingOperations.SetBinding(textBox, TextBox.TextProperty, binding);
+            return textBox;
+        }
+    }
+    enum SettingStore
 	{
 		Properties,
 		File

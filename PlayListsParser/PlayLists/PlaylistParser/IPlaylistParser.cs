@@ -83,17 +83,18 @@ namespace PlayListsParser.PlayLists
 
 				if (File.Exists(filePathDest))
 					RemoveReadOnlyAttribute(filePathDest);
+
 				try
 				{
 					File.Copy(item.Path, filePathDest, true);
 				}
 				catch (System.IO.DirectoryNotFoundException e)
 				{
-					Console.WriteLine(e.Message);
+					Console.WriteLine($"{Name} - {e.Message}");
 				}
 				catch (System.IO.FileNotFoundException e)
 				{
-					Console.WriteLine(e.Message);
+					Console.WriteLine($"{Name} - {e.Message}");
 				}
 				catch (Exception e)
 				{
