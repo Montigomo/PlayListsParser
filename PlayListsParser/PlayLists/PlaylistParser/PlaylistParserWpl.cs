@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using System.Xml;
-using System.ComponentModel;
-using System.Threading;
 
+// ReSharper disable once CheckNamespace
 namespace PlayListsParser.PlayLists
 {
 	internal class PlaylistParserWpl : PlaylistParserBase, IPlaylistParser
@@ -49,24 +45,30 @@ namespace PlayListsParser.PlayLists
 
 
 			XmlNodeList playlistNodes = Document.GetElementsByTagName("seq");
-			XmlNodeList files;
-			var playlistFolder = Path.GetDirectoryName(FilePath);
+
+		    var playlistFolder = Path.GetDirectoryName(FilePath);
 
 			Items = new List<PlayListItem>();
 
 			if (playlistNodes.Count > 0)
 			{
-				files = playlistNodes[0].ChildNodes;
-				for (int i = 0; i < files.Count; i++)
+			    var files = playlistNodes[0].ChildNodes;
+			    for (int i = 0; i < files.Count; i++)
 				{
-					var filePath = files[i].Attributes["src"].Value;
-					if (!File.Exists(filePath))
-						filePath = Path.GetFullPath(playlistFolder + "\\" + files[i].Attributes["src"].Value);
-					Items.Add(new PlayListItem() { Path = filePath });
+				    var xmlAttributeCollection = files[i].Attributes;
+
+				    if (xmlAttributeCollection != null)
+				    {
+				        var filePath = xmlAttributeCollection["src"].Value;
+				        if (!File.Exists(filePath))
+				            filePath = Path.GetFullPath(playlistFolder + "\\" + xmlAttributeCollection["src"].Value);
+
+				        Items.Add(new PlayListItem() { Path = filePath });
+				    }
 				}
 			}
 
-			Title = Document.SelectSingleNode("//title").InnerText;
+			Title = Document.SelectSingleNode("//title")?.InnerText;
 
 			return;
 		}

@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using System.Xml;
-using System.ComponentModel;
-using System.Threading;
 
+// ReSharper disable once CheckNamespace
 namespace PlayListsParser.PlayLists
 {
-	public class PlaylistParserM3u : PlaylistParserBase, IPlaylistParser
+    public class PlaylistParserM3u : PlaylistParserBase, IPlaylistParser
 	{
 
 		#region Constructor
@@ -35,7 +31,6 @@ namespace PlayListsParser.PlayLists
 
 			var playlistFolder = Path.GetDirectoryName(FilePath);
 
-			var i = 0;
 
 			Items = new List<PlayListItem>();
 
@@ -56,8 +51,6 @@ namespace PlayListsParser.PlayLists
 			}
 
 			Title = Path.GetFileNameWithoutExtension(FilePath);
-
-			return;
 		}
 
 		#endregion

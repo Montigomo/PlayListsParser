@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.IO;
 using PlayListsParser.PlayLists;
 
+// ReSharper disable once CheckNamespace
 namespace PlayListsParser
 {
 	static class Extensions

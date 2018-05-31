@@ -1,5 +1,6 @@
 ﻿using PlayListsParser.PlayLists;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,6 +10,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Controls.Primitives;
 
 namespace PlayListsParser
@@ -26,14 +28,21 @@ namespace PlayListsParser
             InitializeComponent();
             Title = App.AppTitle;
             Binding();
-            propertyGridMain.SelectedObject = AppSettings.Instance;
+            PropertyGridMain.SelectedObject = AppSettings.Instance;
+
+            AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
+
         }
 
         TextWriter _writer;
 
-        public static void Log(string message)
-        {
 
+        private  void SettingsPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AppSettings.PlaylistsFolder))
+            {
+                BindGrid();
+            }
         }
 
         #endregion
@@ -43,21 +52,6 @@ namespace PlayListsParser
         private void Binding()
         {
             BindGrid();
-            // {Binding ElementName=wndMain, Path=OutputFolder}
-            //var binding = new Binding();
-            //binding.RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(Window), 1);
-            //binding.Source = this;
-            //binding.ElementName = "wndMain";
-            //binding.Path = new PropertyPath(nameof(OutputFolder));
-            //binding.Mode = BindingMode.TwoWay;
-            //textBoxOutFolder.SetBinding(TextBlock.TextProperty, binding);
-
-
-            //var converter = new NBoolYoBoolConverter();
-            //var binding = new Binding(".");
-            //binding.Mode = BindingMode.TwoWay;
-            //binding.Converter = converter;
-            //checkBoxEmptyFolder.SetBinding(CheckBox.IsCheckedProperty, binding);
         }
 
         bool _initGrid;
@@ -65,20 +59,20 @@ namespace PlayListsParser
         private void BindGrid()
         {
 
-            dataGridMain.ItemsSource = PlayLists;
+            DataGridMain.ItemsSource = PlayLists;
 
             if (!_initGrid)
             {
-                dataGridMain.AutoGenerateColumns = false;
-                dataGridMain.Columns.Add(new DataGridCheckBoxColumn()
+                DataGridMain.AutoGenerateColumns = false;
+                DataGridMain.Columns.Add(new DataGridCheckBoxColumn()
                 {
                     Binding = new Binding("Prepare") { UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged, Mode = BindingMode.TwoWay },
                     //CanUserSort = false,
                     Header = "#"
                 });
-                dataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Name") { Mode = BindingMode.OneWay }, Header = "Name" });
-                dataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Title") { Mode = BindingMode.OneWay }, Header = "Title" });
-                dataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("FilePath") { Mode = BindingMode.OneWay }, Header = "Path" });
+                DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Name") { Mode = BindingMode.OneWay }, Header = "Name" });
+                DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Title") { Mode = BindingMode.OneWay }, Header = "Title" });
+                DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("FilePath") { Mode = BindingMode.OneWay }, Header = "Path" });
                 _initGrid = true;
             }
         }
@@ -87,97 +81,7 @@ namespace PlayListsParser
 
         #region Properties
 
-        private string FindPlaylistsRegex = @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9]+)\.(?<ext>wpl|m3u)";
-
-        private ObservableCollection<PlayList> _playLists;
-
-        internal ObservableCollection<PlayList> PlayLists
-        {
-            get
-            {
-                if (_playLists == null)
-                    _playLists = new ObservableCollection<PlayList>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(FindPlaylistsRegex));
-                return _playLists;
-            }
-            set
-            {
-                _playLists = value;
-            }
-        }
-
-
-        ////private bool _emptyFolder = AppSettings.Instance.EmptyFolder;
-
-        ////public bool EmptyFolder
-        ////{
-        ////    get
-        ////    {
-        ////        return _emptyFolder;
-        ////    }
-        ////    set
-        ////    {
-        ////        _emptyFolder = value;
-        ////        AppSettings.Instance.EmptyFolder = _emptyFolder;
-        ////        AppSettings.Instance.Save();
-        ////        RaisePropertyChanged();
-        ////    }
-        ////}
-
-
-        //private bool _removeDuplicates = AppSettings.Instance.RemoveDuplicates;
-
-        //public bool RemoveDuplicates
-        //{
-        //    get
-        //    {
-        //        return _removeDuplicates;
-        //    }
-        //    set
-        //    {
-        //        _removeDuplicates = value;
-        //        AppSettings.Instance.RemoveDuplicates = _removeDuplicates;
-        //        AppSettings.Instance.Save();
-        //        RaisePropertyChanged();
-        //    }
-        //}
-
-        //private string _playListsFolder;
-
-        //public string PlayListsFodler
-        //{
-        //    get
-        //    {
-        //        if (string.IsNullOrWhiteSpace(_playListsFolder))
-        //            _playListsFolder = AppSettings.Instance.PlaylistsFolder;
-        //        return _playListsFolder;
-        //    }
-        //    set
-        //    {
-        //        _playListsFolder = value;
-        //        AppSettings.Instance.PlaylistsFolder = _playListsFolder;
-        //        AppSettings.Instance.Save();
-        //        RaisePropertyChanged();
-        //    }
-        //}
-
-        //private string _outputFolder;
-
-        //public string OutputFolder
-        //{
-        //    get
-        //    {
-        //        if (string.IsNullOrWhiteSpace(_outputFolder))
-        //            _outputFolder = AppSettings.Instance.OutputFolder;
-        //        return _outputFolder;
-        //    }
-        //    set
-        //    {
-        //        _outputFolder = value;
-        //        AppSettings.Instance.OutputFolder = _outputFolder;
-        //        AppSettings.Instance.Save();
-        //        RaisePropertyChanged();
-        //    }
-        //}
+        internal List<PlayList> PlayLists => PlayList.PlayLists;
 
         #endregion
 
@@ -191,11 +95,11 @@ namespace PlayListsParser
 
         //private void InitBackgroundWorker()
         //{
-            //backgroundWorker.WorkerReportsProgress = true;
-            //backgroundWorker.ProgressChanged += ProgressChanged;
-            //backgroundWorker.DoWork += DoWork;
-            //// not required for this question, but is a helpful event to handle
-            //backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
+        //backgroundWorker.WorkerReportsProgress = true;
+        //backgroundWorker.ProgressChanged += ProgressChanged;
+        //backgroundWorker.DoWork += DoWork;
+        //// not required for this question, but is a helpful event to handle
+        //backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
         //}
 
         //private BackgroundWorker backgroundWorker = new BackgroundWorker();
@@ -223,7 +127,7 @@ namespace PlayListsParser
 
         private void ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => progressBarMain.Value = e.ProgressPercentage));
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => ProgressBarMain.Value = e.ProgressPercentage));
         }
 
         private void ProgressBarInit(int max)
@@ -231,16 +135,16 @@ namespace PlayListsParser
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
             {
                 Console.WriteLine(@"Init progress bar.");
-                progressBarMain.Minimum = 0;
-                progressBarMain.Maximum = max;
+                ProgressBarMain.Minimum = 0;
+                ProgressBarMain.Maximum = max;
                 PlayList.ProgressChanged += ProgressChanged;
-                progressBarMain.Visibility = Visibility.Visible;
+                ProgressBarMain.Visibility = Visibility.Visible;
             }));
         }
 
         private void ProgressBarHide()
         {
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => progressBarMain.Visibility = Visibility.Hidden));
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => ProgressBarMain.Visibility = Visibility.Hidden));
         }
 
         #endregion
@@ -291,16 +195,17 @@ namespace PlayListsParser
                 }
             }
 
-            await PlayList.SaveItemsAsync(PlayLists, AppSettings.Instance.OutputFolder,
+            await PlayList.SaveItemsAsync(
+                AppSettings.Instance.OutputFolder,
                 (fn) =>
                 {
                     var result = string.Empty;
-                    var match = Regex.Match(fn, FindPlaylistsRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                    var match = Regex.Match(fn, AppSettings.Instance.FindPlaylistsRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
                     if (match.Success)
                         result = match.Groups["name"].Value;
                     return result;
                 },
-                (max) => ProgressBarInit(max)).ContinueWith((v) => ProgressBarHide());
+                ProgressBarInit).ContinueWith((v) => ProgressBarHide());
 
         }
 
@@ -317,7 +222,7 @@ namespace PlayListsParser
         private void wndMain_Loaded(object sender, RoutedEventArgs e)
         {
             // Instantiate the writer
-            _writer = new TextBoxStreamWriter(textBoxLog);
+            _writer = new TextBoxStreamWriter(TextBoxLog);
 
             // Redirect the out Console stream
             Console.SetOut(_writer);
@@ -327,15 +232,15 @@ namespace PlayListsParser
 
         private void SysMenuItem_ItemClick_1(object sender, EventArgs e)
         {
-            SettingWindow setWindow = new SettingWindow();
-            setWindow.Owner = this;
+
+            SettingWindow setWindow = new SettingWindow { Owner = this };
+
             setWindow.ShowDialog();
         }
 
         private void columnHeader_Click(object sender, RoutedEventArgs e)
         {
-            var columnHeader = sender as DataGridColumnHeader;
-            if (columnHeader != null)
+            if (sender is DataGridColumnHeader columnHeader)
             {
                 if (columnHeader.DisplayIndex == 0 && columnHeader.Content.ToString() == "#")
                     PlayLists.ForEach(t => t.Prepare = !t.Prepare);

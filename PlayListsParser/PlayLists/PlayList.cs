@@ -10,23 +10,52 @@ namespace PlayListsParser.PlayLists
     internal class PlayList
 	{
 
-		#region Static save methods
+        #region Static save methods
 
-		internal static Task<bool> SaveItemsAsync(IEnumerable<PlayList> files, string outFolder, Func<string, string> getFolder, Action<int> pbInit)
+	    static PlayList()
+	    {
+	        AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
+
+	    }
+
+	    private static void SettingsPropertyChanged(object sender, PropertyChangedEventArgs e)
+	    {
+	        if (e.PropertyName == nameof(AppSettings.PlaylistsFolder))
+	        {
+	            _playLists = null;
+	        }
+	    }
+
+	   //private ObservableCollection<PlayList> _playLists;
+	    private static List<PlayList> _playLists;
+
+	    internal static List<PlayList> PlayLists
+	    {
+	        get
+	        {
+	            if (_playLists == null)
+	                _playLists = AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.FindPlaylistsRegex).ToList();
+	            return _playLists;
+	        }
+	    }
+
+        internal static Task SaveItemsAsync(string outFolder, Func<string, string> getFolder, Action<int> pbInit)
 		{
-			return Task.Run(() => SaveItems(files, outFolder, getFolder, pbInit));
+			return Task.Run(() => SaveItems(outFolder, getFolder, pbInit));
 		}
 
-		private static bool SaveItems(IEnumerable<PlayList> files, string outFolder, Func<string, string> getFolder, Action<int> pbInit)
+		private static void SaveItems(string outFolder, Func<string, string> getFolder, Action<int> pbInit)
 		{
 
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 
-			var count = files.Aggregate(0, (result, element) => result + element.Items.Count);
+		    //var playLists = files as PlayList[] ?? files.ToArray();
+
+		    var count = PlayLists.Aggregate(0, (result, element) => result + element.Items.Count);
 
 			pbInit(count);
 
-			Task.WaitAll(files.Where(p=> p.Prepare).Select(t => t.SaveItemsAsync(outFolder, getFolder)).ToArray());
+			Task.WaitAll(PlayLists.Where(p=> p.Prepare).Select(t => t.SaveItemsAsync(outFolder, getFolder)).ToArray());
 
 			//foreach (var item in files)
 			//	item.SaveItems(outFolder, getFolder);
@@ -34,8 +63,6 @@ namespace PlayListsParser.PlayLists
 			watch.Stop();
 
 			Console.WriteLine($@"Execution time: {watch.Elapsed.Hours} hours  {watch.Elapsed.Minutes} minutes {watch.Elapsed.Seconds} seconds");
-
-			return true;
 		}
 
 		public static event ProgressChangedEventHandler ProgressChanged;
@@ -115,12 +142,11 @@ namespace PlayListsParser.PlayLists
 
 		#region Parse & Save
 
-		private Task<bool> SaveItemsAsync(string outFolder, Func<string, string> getFolder)
+		private Task SaveItemsAsync(string outFolder, Func<string, string> getFolder)
 		{
 			return Task.Run(() =>
 			{
 				SaveItems(outFolder, getFolder);
-				return true;
 			});
 		}
 

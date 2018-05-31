@@ -15,10 +15,11 @@ namespace PlayListsParser
 	/// </summary>
 	public partial class App : Application
 	{
-		static public readonly string Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-		static public readonly string AppTitle = "PLP  - " + Version;
+		public static readonly string Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+		public static readonly string AppTitle = $@"Play Lists Parser - {Version}";
 
-		internal static MemoryMappedFile sharedMemory;
+
+        internal static MemoryMappedFile sharedMemory;
 
 		private static volatile Mutex _instanceMutex = null;
 		private static string _appGuid = "{CF1A37DC-C651-4C8F-B739-4B6E214E0810}";
@@ -77,10 +78,10 @@ namespace PlayListsParser
 
 		private void ApplicationDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
 		{
-			string errorMessage = string.Format(
-				"An application error occurred. If this error occurs again there seems to be a serious bug in the application, and you better close it.\n\n" +
-				"Error:{0}\n\nDo you want to continue?\n (if you click Yes you will continue with your work, if you click No the application will close)",
-				e.Exception.Message);
+			string errorMessage =
+			    "An application error occurred. If this error occurs again there seems to be a serious bug in the application, and you better close it.\n\n" +
+			    $"Error:{e.Exception.Message}\n\nDo you want to continue?\n (if you click Yes you will continue with your work, if you click No the application will close)";
+
 			//insert code to log exception here 
 			if (MessageBox.Show(errorMessage, "Application UnhandledException Error", MessageBoxButton.YesNoCancel, MessageBoxImage.Error) == MessageBoxResult.No)
 			{
@@ -95,8 +96,7 @@ namespace PlayListsParser
 
 		private void Application_Exit(object sender, ExitEventArgs e)
 		{
-			if (sharedMemory != null)
-				sharedMemory.Dispose();
+		    sharedMemory?.Dispose();
 		}
 
 

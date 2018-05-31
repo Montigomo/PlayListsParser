@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.IO;
 
+// ReSharper disable once CheckNamespace
 namespace PlayListsParser.PlayLists
 {
 	interface IPlaylistParser
@@ -62,10 +61,8 @@ namespace PlayListsParser.PlayLists
 				return _items;
 			}
 
-			protected set
-			{
-				_items = value;
-			}
+			protected set => _items = value;
+
 		}
 
 		private void Parse() { }
@@ -73,13 +70,12 @@ namespace PlayListsParser.PlayLists
 		public bool SaveFiles(string folderPath)
 		{
 			var totalCount = Items.Count;
-			var currentCount = 0;
-			var result = true;
+
 			foreach (var item in Items)
 			{
 				var filePathDest = Path.GetFullPath(folderPath + "\\" + Path.GetFileName(item.Path));
 
-				Directory.CreateDirectory(Path.GetDirectoryName(filePathDest));
+				Directory.CreateDirectory(Path.GetDirectoryName(filePathDest) ?? throw new InvalidOperationException());
 
 				if (File.Exists(filePathDest))
 					RemoveReadOnlyAttribute(filePathDest);
@@ -90,22 +86,22 @@ namespace PlayListsParser.PlayLists
 				}
 				catch (System.IO.DirectoryNotFoundException e)
 				{
-					Console.WriteLine($"{Name} - {e.Message}");
+					Console.WriteLine($@"{Name} - {e.Message}");
 				}
 				catch (System.IO.FileNotFoundException e)
 				{
-					Console.WriteLine($"{Name} - {e.Message}");
+					Console.WriteLine($@"{Name} - {e.Message}");
 				}
-				catch (Exception e)
-				{
-					throw e;
+				catch (Exception)
+                {
+					throw;
 				}
 
-				currentCount++;
 
 				RaiseProgressChangedEvent();// new ProgressChangedEventArgs((currentCount * 100) / totalCount, null));
 			}
-			return result;
+
+			return true;
 		}
 
 		public Task<bool> SaveFilesAsync(string folderPath)
@@ -125,7 +121,7 @@ namespace PlayListsParser.PlayLists
 				// Make the file RW
 				attributes = RemoveAttribute(attributes, FileAttributes.ReadOnly);
 				File.SetAttributes(path, attributes);
-				Console.WriteLine("The {0} file is no longer RO.", path);
+				Console.WriteLine(@"The {0} file is no longer RO.", path);
 			}
 			//else
 			//{
