@@ -12,53 +12,53 @@
     Title="MainWindow" Height="600" Width="990" 
     Loaded="wndMain_Loaded">
 
-    <Window.Resources>
-        <local:NBoolYoBoolConverter x:Key="NBoolYoBoolConverter" />
-    </Window.Resources>
+	<Window.Resources>
+		<local:NBoolYoBoolConverter x:Key="NBoolYoBoolConverter" />
+	</Window.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="24"/>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="30" />
-        </Grid.RowDefinitions>
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="24"/>
+			<RowDefinition Height="*" />
+			<RowDefinition Height="30" />
+		</Grid.RowDefinitions>
 
-        <Menu Height="22" x:Name="MainMenu" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3">
-            <MenuItem x:Name="RunMenuItem" Header="Run" Height="22" Click="_runMenuItem_Click"/>
-            <MenuItem Header="Rename" Click="MenuItem_Click"/>
-            <!--<MenuItem Header="{Resx _helpMenuItem.Header}" Name="_helpMenuItem">
+		<Menu Height="22" x:Name="MainMenu" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3" MouseDoubleClick="MainMenu_MouseDoubleClick">
+			<MenuItem x:Name="RunMenuItem" Header="Run" Height="22" Click="_runMenuItem_Click" Tag="toggle|Run|Cancel"/>
+			<MenuItem Header="Rename" Click="MenuItem_Click"  Tag="toggle"/>
+			<!--<MenuItem Header="{Resx _helpMenuItem.Header}" Name="_helpMenuItem">
                 <MenuItem Header="{Resx _aboutMenuItem.Header}" Icon="{Resx _aboutMenuItem.Icon}" Name="_aboutMenuItem" />
             </MenuItem>-->
-        </Menu>
+		</Menu>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.8*"/>
-                <ColumnDefinition Width="3"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="2*" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+		<Grid Grid.Row="1">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="0.8*"/>
+				<ColumnDefinition Width="3"/>
+				<ColumnDefinition Width="*"/>
+			</Grid.ColumnDefinitions>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="2*" />
+				<RowDefinition Height="*" />
+			</Grid.RowDefinitions>
 
-            <DataGrid x:Name="DataGridMain" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
-                <DataGrid.Resources>
-                    <Style TargetType="{x:Type DataGridColumnHeader}">
-                        <EventSetter Event="ButtonBase.Click" Handler="columnHeader_Click" />
-                    </Style>
-                </DataGrid.Resources>
-            </DataGrid>
+			<DataGrid x:Name="DataGridMain" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"  Tag="toggle" Sorting="DataGridMain_Sorting">
+				<DataGrid.Resources>
+					<Style TargetType="{x:Type DataGridColumnHeader}">
+						<EventSetter Event="ButtonBase.Click" Handler="columnHeader_Click" />
+					</Style>
+				</DataGrid.Resources>
+			</DataGrid>
 
-            <GridSplitter  HorizontalAlignment="Stretch" Width="5" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
+			<GridSplitter  HorizontalAlignment="Stretch" Width="5" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
 
-            <xctk:PropertyGrid x:Name="PropertyGridMain" Grid.Column="2" Grid.Row="0" Margin="3"/>
+			<xctk:PropertyGrid x:Name="PropertyGridMain" Grid.Column="2" Grid.Row="0" Margin="3"   Tag="toggle"/>
 
-            <TextBox x:Name="TextBoxLog" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Margin="3" />
-        </Grid>
+			<TextBox x:Name="TextBoxLog" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Margin="3" IsReadOnly="True" FontSize="10" VerticalScrollBarVisibility="Auto" />
+		</Grid>
 
-        <StatusBar Grid.ColumnSpan="3" Grid.Row="2" Margin="0">
-            <!--<StatusBar.ItemsPanel>
+		<StatusBar Grid.ColumnSpan="3" Grid.Row="2" Margin="0">
+			<!--<StatusBar.ItemsPanel>
 				<ItemsPanelTemplate>
 					<Grid>
 						<Grid.RowDefinitions>
@@ -70,19 +70,19 @@
 					</Grid>
 				</ItemsPanelTemplate>
 			</StatusBar.ItemsPanel>-->
-            <StatusBarItem HorizontalContentAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
-                <ProgressBar  x:Name="ProgressBarMain"/>
-            </StatusBarItem>
-        </StatusBar>
+			<StatusBarItem HorizontalContentAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
+				<ProgressBar  x:Name="ProgressBarMain"/>
+			</StatusBarItem>
+		</StatusBar>
 
-        <SysMenu:SysMenuControl HorizontalAlignment="Left" Height="37" Margin="71,-11,0,0" VerticalAlignment="Top" Width="93">
-            <SysMenu:SysMenuControl.SysMenuItems>
-                <SysMenu:SysMenuItem CommandText="" CmdId="1" Index="5" MenuFlags="MF_BYPOSITION, MF_SEPARATOR"/>
-                <SysMenu:SysMenuItem CommandText="Settings" CmdId="2" Index="6" MenuFlags="MF_BYPOSITION" ItemClick="SysMenuItem_ItemClick_1"/>
-                <SysMenu:SysMenuItem CommandText="About" CmdId="3" Index="6" MenuFlags="MF_BYPOSITION" />
-            </SysMenu:SysMenuControl.SysMenuItems>
-        </SysMenu:SysMenuControl>
+		<SysMenu:SysMenuControl HorizontalAlignment="Left" Height="37" Margin="71,-11,0,0" VerticalAlignment="Top" Width="93">
+			<SysMenu:SysMenuControl.SysMenuItems>
+				<SysMenu:SysMenuItem CommandText="" CmdId="1" Index="5" MenuFlags="MF_BYPOSITION, MF_SEPARATOR"/>
+				<SysMenu:SysMenuItem CommandText="Settings" CmdId="2" Index="6" MenuFlags="MF_BYPOSITION" ItemClick="SysMenuItem_ItemClick_1"/>
+				<SysMenu:SysMenuItem CommandText="About" CmdId="3" Index="6" MenuFlags="MF_BYPOSITION" />
+			</SysMenu:SysMenuControl.SysMenuItems>
+		</SysMenu:SysMenuControl>
 
-    </Grid>
+	</Grid>
 
 </Window>

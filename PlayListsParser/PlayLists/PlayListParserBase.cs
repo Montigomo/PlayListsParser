@@ -1,31 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.ComponentModel;
 using System.IO;
+using System.Threading.Tasks;
 
-// ReSharper disable once CheckNamespace
 namespace PlayListsParser.PlayLists
 {
-	interface IPlaylistParser
-	{
-		bool SaveFiles(string folderPath);
-
-		Task<bool> SaveFilesAsync(string folderPath);
-
-		event ProgressChangedEventHandler ProgressChanged;
-
-		List<PlayListItem> Items { get; }
-
-		string FilePath { get; }
-
-		string Title { get; }
-
-		string Name { get; }
-	}
-
 	public class PlaylistParserBase
 	{
+
+		#region Constructor & Parse
 
 		public PlaylistParserBase(string filePath)
 		{
@@ -34,13 +18,22 @@ namespace PlayListsParser.PlayLists
 
 		}
 
+		private void Parse() { }
+
+		#endregion
+
+		#region EventHandler
+
 		public event ProgressChangedEventHandler ProgressChanged;
 
 		protected void RaiseProgressChangedEvent(ProgressChangedEventArgs e = null)
 		{
-			var eh = ProgressChanged;
 			ProgressChanged?.Invoke(this, e);
 		}
+
+		#endregion
+
+		#region Properties
 
 		public string Name { get; protected set; }
 
@@ -65,7 +58,9 @@ namespace PlayListsParser.PlayLists
 
 		}
 
-		private void Parse() { }
+		#endregion
+
+		#region SaveFiles
 
 		public bool SaveFiles(string folderPath)
 		{
@@ -82,7 +77,8 @@ namespace PlayListsParser.PlayLists
 
 				try
 				{
-					File.Copy(item.Path, filePathDest, true);
+					if(!(AppSettings.Instance.UseTask && File.Exists(filePathDest)))
+						File.Copy(item.Path, filePathDest, true);
 				}
 				catch (System.IO.DirectoryNotFoundException e)
 				{
@@ -93,7 +89,7 @@ namespace PlayListsParser.PlayLists
 					Console.WriteLine($@"{Name} - {e.Message}");
 				}
 				catch (Exception)
-                {
+				{
 					throw;
 				}
 
@@ -108,6 +104,10 @@ namespace PlayListsParser.PlayLists
 		{
 			return Task.Run(() => SaveFiles(folderPath));
 		}
+
+		#endregion
+
+		#region Remove files Attributes
 
 		protected void RemoveReadOnlyAttribute(string path)
 		{
@@ -136,6 +136,7 @@ namespace PlayListsParser.PlayLists
 			return attributes & ~attributesToRemove;
 		}
 
-	}
+		#endregion
 
+	}
 }

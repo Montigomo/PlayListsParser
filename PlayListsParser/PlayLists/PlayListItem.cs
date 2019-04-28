@@ -1,7 +1,7 @@
 ﻿
 namespace PlayListsParser.PlayLists
 {
-    public class PlayListItem
+	public class PlayListItem
 	{
 		public string Path { get; set; }
 
