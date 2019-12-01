@@ -25,7 +25,7 @@
 
 		<Menu Height="22" x:Name="MainMenu" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3" MouseDoubleClick="MainMenu_MouseDoubleClick">
 			<MenuItem x:Name="RunMenuItem" Header="Run" Height="22" Click="_runMenuItem_Click" Tag="toggle|Run|Cancel"/>
-			<MenuItem Header="Rename" Click="MenuItem_Click"  Tag="toggle"/>
+			<MenuItem Header="Test" Click="_testMenuItem_Click"  Tag="toggle"/>
 			<!--<MenuItem Header="{Resx _helpMenuItem.Header}" Name="_helpMenuItem">
                 <MenuItem Header="{Resx _aboutMenuItem.Header}" Icon="{Resx _aboutMenuItem.Icon}" Name="_aboutMenuItem" />
             </MenuItem>-->

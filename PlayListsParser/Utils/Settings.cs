@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -12,13 +14,17 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Runtime.CompilerServices;
+using System.Linq;
+using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 
 // ReSharper disable once CheckNamespace
 namespace PlayListsParser
 {
+
 	[Description("Settings")]
 	public class AppSettings : INotifyPropertyChanged
 	{
+		//static unsafe ref T Null<T>() where T : unmanaged => ref *(T*)null;
 
 		#region Instance
 
@@ -171,6 +177,7 @@ namespace PlayListsParser
 
 		[Category("General")]
 		[Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
+		[PropertyOrder(0)]
 		public string PlaylistsFolder
 		{
 			get => _playListsFolder;
@@ -178,10 +185,29 @@ namespace PlayListsParser
 			{
 				_playListsFolder = value;
 				NotifyPropertyChanged();
-
 			}
 		}
 
+		[PropertyOrder(1)]
+		[Category("General")]
+		[Description("This property is a complex property and has no default editor.")]
+		public string FilterRegex { get; set; } = @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)";
+
+
+		[PropertyOrder(1)]
+		[Category("General")]
+		[Editor(typeof(PlsFilterCombobox), typeof(PlsFilterCombobox))]
+		[Description("This property is a complex property and has no default editor.")]
+		public string PlsFilter { get; set; }
+
+		[Browsable(false)]
+		public List<string> PlsFilterItems { get; set; }// = new List<string>() { @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)" };
+
+		[Browsable(false)]
+		public PlsFolderFilterList PlsFilterCollection { get; set; }
+
+
+		[PropertyOrder(2)]
 		[Category("General")]
 		[Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
 		public string OutputFolder { get; set; }
@@ -198,11 +224,6 @@ namespace PlayListsParser
 
 		////[Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
 		////public string LastName { get; set; }
-
-		[Category("General")]
-		[Description("This property is a complex property and has no default editor.")]
-		public string FindPlaylistsRegex { get; set; } = @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9]+)\.(?<ext>wpl|m3u)";
-
 
 		[Category("General")]
 		[Description("Use Task<T>.")]
@@ -245,6 +266,8 @@ namespace PlayListsParser
 	}
 
 
+	#region FirstNameEditor
+
 	//Custom editors that are used as attributes MUST implement the ITypeEditor interface.
 	public class FirstNameEditor : ITypeEditor
 	{
@@ -265,9 +288,136 @@ namespace PlayListsParser
 			return textBox;
 		}
 	}
+
+	#endregion
+
+
+	#region PlsFilterComboBox
+
+	public class PlsFilterCombobox : ComboBoxEditor
+	{
+
+		protected override void SetControlProperties(PropertyItem propertyItem)
+		{
+			base.SetControlProperties(propertyItem);
+
+			this.Editor.IsEditable = true;
+		}
+
+		protected override IEnumerable CreateItemsSource(PropertyItem propertyItem)
+		{
+			if (AppSettings.Instance.PlsFilterItems?.Count == 0)
+				AppSettings.Instance.PlsFilterItems.Add(@"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)");
+
+			return AppSettings.Instance.PlsFilterItems;
+		}
+
+		//protected override void SetValueDependencyProperty()
+		//{
+		//	this.ValueProperty = ComboBox.ItemsSourceProperty;
+		//}
+	}
+
+	#endregion
+
+
+	#region PlsFolderFilterList
+
+	public class PlsFolderFilterList : ICollection<string>
+	{
+		private Dictionary<int, string> _dictionary = new Dictionary<int, string>();
+
+		private List<int> UsedCounter
+		{
+			get { return _dictionary.Keys.ToList(); }
+		}
+
+		private object _lock = new object();
+
+		[XmlAttribute("index")]
+		public int Index
+		{
+			get;
+			set;
+		}
+
+		#region ICollection implimentation
+
+		public int Count => _dictionary.Count;
+
+		public bool IsReadOnly => throw new NotImplementedException();
+
+		public void Add(string item)
+		{
+			lock (_lock)
+			{
+				int index = _dictionary.Keys.Max() + 1;
+				_dictionary.Add(index, item);
+			}
+		}
+
+		public void Clear()
+		{
+			_dictionary.Clear();
+		}
+
+		public bool Contains(string item)
+		{
+			return _dictionary.ContainsValue(item);
+		}
+
+		public void CopyTo(string[] array, int arrayIndex)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IEnumerator<string> GetEnumerator()
+		{
+			return _dictionary.Values.GetEnumerator();
+		}
+
+		public bool Remove(string item)
+		{
+			throw new NotImplementedException();
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return _dictionary.Values.GetEnumerator();
+		}
+
+		#endregion
+
+		public string this[int key]
+		{
+			get
+			{
+				int entry = _dictionary.Keys.Contains(key) ? _dictionary.Keys.FirstOrDefault(_key => _key == key) : -1;
+				if (entry >= 0)
+					return _dictionary[entry];
+				//ThrowHelper.ThrowKeyNotFoundException();
+				return default(string);
+			}
+
+			set
+			{
+				_dictionary[key] = value;
+			}
+		}
+
+	}
+
+	#endregion
+
+
+	#region Enums
+
 	enum SettingStore
 	{
 		Properties,
 		File
 	}
+
+	#endregion
+
 }

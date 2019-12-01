@@ -36,23 +36,21 @@ namespace PlayListsParser.PlayLists
 			{
 				if (_playLists == null)
 				{
-					_playLists = new ObservableCollection<PlayList>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.FindPlaylistsRegex));
+					_playLists = new ObservableCollection<PlayList>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.FilterRegex));
 				}
 				return _playLists;
 			}
 		}
 
-		internal static Task SaveItemsAsync(string outFolder, Func<string, string> getFolder, Action<int> pbInit)
+		internal static Task SavePlaylistsAsync(string outFolder, Func<string, string> getFolder, Action<int> pbInit)
 		{
-			return Task.Run(() => SaveItems(outFolder, getFolder, pbInit));
+			return Task.Run(() => SavePlaylists(outFolder, getFolder, pbInit));
 		}
 
-		private static void SaveItems(string outFolder, Func<string, string> getFolder, Action<int> pbInit)
+		private static void SavePlaylists(string outFolder, Func<string, string> getFolder, Action<int> pbInit)
 		{
 
 			var watch = System.Diagnostics.Stopwatch.StartNew();
-
-			//var playLists = files as PlayList[] ?? files.ToArray();
 
 			var workedPlaylists = PlayLists.Where(p => p.Prepare).ToList();
 
@@ -80,11 +78,12 @@ namespace PlayListsParser.PlayLists
 
 		private IPlaylistParser _parser;
 
-		public List<PlayListItem> Items => _parser.Items;
+		public List<PlayListItem> Items => _parser.Items.ToList();
 
 		private bool _prepare = true;
 
-		public bool Prepare {
+		public bool Prepare
+		{
 			get => _prepare;
 			set
 			{
@@ -156,6 +155,16 @@ namespace PlayListsParser.PlayLists
 
 		#endregion
 
+		#region SavePlaylist
+
+		internal void SavePlaylist(string location = null, bool overwrite = true)
+		{
+			_parser.SavePlaylist(location, overwrite);
+		}
+
+
+		#endregion
+
 		#region Save Items
 
 		private Task SaveItemsAsync(string outFolder, Func<string, string> getFolder)
@@ -179,7 +188,7 @@ namespace PlayListsParser.PlayLists
 				OutFolder = outFolder;
 
 			if (!String.IsNullOrWhiteSpace(OutFolder))
-				_parser.SaveFiles(OutFolder);
+				_parser.SaveItemsRaw(OutFolder);
 		}
 
 		#endregion

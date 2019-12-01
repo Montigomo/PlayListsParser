@@ -16,7 +16,7 @@ namespace PlayListsParser
 	public partial class App : Application
 	{
 		public static readonly string Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-		public static readonly string AppTitle = $@"Play Lists Parser - {Version}";
+		public static readonly string AppTitle = $@"Playlist Parser - {Version}";
 
 
         internal static MemoryMappedFile sharedMemory;
@@ -74,6 +74,9 @@ namespace PlayListsParser
 
 			}
 			base.OnStartup(e);
+
+			//var t = new Dictionary<int, string>();
+			//var i = t.Keys.FirstOrDefault(ind => ind == 3);
 		}
 
 		private void ApplicationDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)

@@ -25,9 +25,15 @@ namespace PlayListsParser
 
 		public MainWindow()
 		{
+
 			InitializeComponent();
+
 			Title = App.AppTitle;
+
+			_writer = new TextBoxStreamWriter(TextBoxLog);
+
 			Binding();
+
 			PropertyGridMain.SelectedObject = AppSettings.Instance;
 
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
@@ -71,7 +77,7 @@ namespace PlayListsParser
 					Header = "#"
 				});
 				DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Name") { Mode = BindingMode.OneWay }, Header = "Name" });
-				DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Title") { Mode = BindingMode.OneWay }, Header = "Title" });
+				//DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Title") { Mode = BindingMode.OneWay }, Header = "Title" });
 				DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("FilePath") { Mode = BindingMode.OneWay }, Header = "Path" });
 				_initGrid = true;
 			}
@@ -198,8 +204,6 @@ namespace PlayListsParser
 
 		#region Events
 
-
-
 		private async void RunPlayListItemsSaveAsync()
 		{
 			ToggleControls(RunMenuItem);
@@ -220,12 +224,12 @@ namespace PlayListsParser
 				}
 			}
 
-			await PlayList.SaveItemsAsync(
+			await PlayList.SavePlaylistsAsync(
 				AppSettings.Instance.OutputFolder,
 				(fn) =>
 				{
 					var result = string.Empty;
-					var match = Regex.Match(fn, AppSettings.Instance.FindPlaylistsRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+					var match = Regex.Match(fn, AppSettings.Instance.FilterRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 					if (match.Success)
 						result = match.Groups["name"].Value;
 					return result;
@@ -247,7 +251,7 @@ namespace PlayListsParser
 		private void wndMain_Loaded(object sender, RoutedEventArgs e)
 		{
 			// Instantiate the writer
-			_writer = new TextBoxStreamWriter(TextBoxLog);
+			//_writer = new TextBoxStreamWriter(TextBoxLog);
 
 			// Redirect the out Console stream
 			Console.SetOut(_writer);
@@ -288,12 +292,29 @@ namespace PlayListsParser
 			RunPlayListItemsSaveAsync();
 		}
 
-		private void MenuItem_Click(object sender, RoutedEventArgs e)
+		private void _testMenuItem_Click(object sender, RoutedEventArgs e)
 		{
-			foreach (var item in PlayLists)
-				item.Rename();
+			Test();
 		}
 
+
+		#endregion
+
+		#region TEST
+		private void Test()
+		{
+			var t1 = Extensions.GetAbsolutePath(@"D:\music\Playlists\A.Dance.wpl", @"..\AronChupa\AronChupa – Im an albatraoz.mp3");
+
+
+			//var pl = WplPlaylist.Create(@"D:\temp\3\A.Prime.wpl");
+			//pl.Save();
+
+			var pl = WplPlaylist.Load(@"D:\music\Playlists\A.Dance.wpl");
+			var items = pl.Items.ToList();
+			var ts = Path.GetFullPath(@"D:\music\Playlists\..\..\..\..\music\Fatboy Slim\+ Compilations\2009 - Dance Bitch (LIB66CD)\02. Kidda - Under The Sun (Herve&apos;s Aint No Sunshine Mix).mp3");
+			//var pl = new PlayList(@"D:\music\Playlists\A.Pop.m3u");
+			//pl.SavePlaylist();
+		}
 
 		#endregion
 

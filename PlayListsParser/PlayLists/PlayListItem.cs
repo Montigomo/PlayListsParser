@@ -1,4 +1,6 @@
 ﻿
+
+
 namespace PlayListsParser.PlayLists
 {
 	public class PlayListItem

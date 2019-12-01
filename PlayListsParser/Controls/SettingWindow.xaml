@@ -9,7 +9,8 @@
         Title="SettingWindow" Height="450" Width="800" Loaded="Window_Loaded">
 	<Grid>
 
-		<xctk:PropertyGrid x:Name="propertyGridMain" Margin="0"/>
+		<xctk:PropertyGrid x:Name="propertyGridMain" Margin="0" />
+		<Grid HorizontalAlignment="Left" Height="100" Margin="199,203,0,0" VerticalAlignment="Top" Width="100"/>
 
 	</Grid>
 </Window>

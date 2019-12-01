@@ -9,13 +9,17 @@ namespace PlayListsParser.PlayLists
 {
 	interface IPlaylistParser
 	{
-		bool SaveFiles(string folderPath);
+		void SavePlaylist(string location, bool overwrite);
 
-		Task<bool> SaveFilesAsync(string folderPath);
+		bool SaveItemsRaw(string folderPath);
+
+		Task<bool> SaveItemsRawAsync(string folderPath);
 
 		event ProgressChangedEventHandler ProgressChanged;
 
-		List<PlayListItem> Items { get; }
+		List<PlayListItem> Items { get; set; }
+
+		void Add(string uri, string name);
 
 		string FilePath { get; }
 
@@ -23,7 +27,5 @@ namespace PlayListsParser.PlayLists
 
 		string Name { get; }
 	}
-
-
-
+	 
 }
