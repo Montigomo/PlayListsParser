@@ -229,7 +229,7 @@ namespace PlayListsParser
 				(fn) =>
 				{
 					var result = string.Empty;
-					var match = Regex.Match(fn, AppSettings.Instance.FilterRegex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+					var match = Regex.Match(fn, AppSettings.Instance.PlsFilter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 					if (match.Success)
 						result = match.Groups["name"].Value;
 					return result;
@@ -303,15 +303,13 @@ namespace PlayListsParser
 		#region TEST
 		private void Test()
 		{
-			var t1 = Extensions.GetAbsolutePath(@"D:\music\Playlists\A.Dance.wpl", @"..\AronChupa\AronChupa – Im an albatraoz.mp3");
 
 
-			//var pl = WplPlaylist.Create(@"D:\temp\3\A.Prime.wpl");
-			//pl.Save();
+			var t = AppSettings.Instance.PlsFilter;
 
-			var pl = WplPlaylist.Load(@"D:\music\Playlists\A.Dance.wpl");
-			var items = pl.Items.ToList();
-			var ts = Path.GetFullPath(@"D:\music\Playlists\..\..\..\..\music\Fatboy Slim\+ Compilations\2009 - Dance Bitch (LIB66CD)\02. Kidda - Under The Sun (Herve&apos;s Aint No Sunshine Mix).mp3");
+			//var pl = WplPlaylist.Load(@"D:\music\Playlists\A.Dance.wpl");
+			//var items = pl.Items.ToList();
+			//var ts = Path.GetFullPath(@"D:\music\Playlists\..\..\..\..\music\Fatboy Slim\+ Compilations\2009 - Dance Bitch (LIB66CD)\02. Kidda - Under The Sun (Herve&apos;s Aint No Sunshine Mix).mp3");
 			//var pl = new PlayList(@"D:\music\Playlists\A.Pop.m3u");
 			//pl.SavePlaylist();
 		}
@@ -325,6 +323,11 @@ namespace PlayListsParser
 			//PlayLists.RemoveAt(PlayLists.Count - 1);
 
 			//PlayLists.Add(new PlayList(PlayLists[PlayLists.Count - 1].FilePath));
+		}
+
+		private void menuItemDgRefresh_Click(object sender, RoutedEventArgs e)
+		{
+
 		}
 	}
 

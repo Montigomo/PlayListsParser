@@ -9,6 +9,7 @@ namespace PlayListsParser.PlayLists
 	public class PlaylistParserBase
 	{
 
+
 		#region Constructor & Parse
 
 		public PlaylistParserBase(string filePath)
@@ -68,7 +69,7 @@ namespace PlayListsParser.PlayLists
 		/// <param name="folderPath"></param>
 		/// <returns></returns>
 		/// 
-		public bool SaveItemsRaw(string folderPath)
+		public bool SaveItems(string folderPath)
 		{
 			//var totalCount = Items.Count;
 
@@ -137,9 +138,9 @@ namespace PlayListsParser.PlayLists
 		/// </summary>
 		/// <param name="folderPath"></param>
 		/// <returns></returns>
-		public Task<bool> SaveItemsRawAsync(string folderPath)
+		public Task<bool> SaveItemsAsync(string folderPath)
 		{
-			return Task.Run(() => SaveItemsRaw(folderPath));
+			return Task.Run(() => SaveItems(folderPath));
 		}
 
 		#endregion

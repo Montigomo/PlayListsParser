@@ -95,6 +95,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Controls\PgEditorFolderRegex.xaml.cs">
+      <DependentUpon>PgEditorFolderRegex.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\PgEditorFile.xaml.cs">
       <DependentUpon>PgEditorFile.xaml</DependentUpon>
     </Compile>
@@ -108,6 +111,10 @@
     <Compile Include="Utils\Extensions.cs" />
     <Compile Include="Utils\IconButton.cs" />
     <Compile Include="Utils\Settings.cs" />
+    <Page Include="Controls\PgEditorFolderRegex.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

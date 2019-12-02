@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.Runtime.CompilerServices;
 using System.Linq;
 using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
+using System.Collections.Specialized;
 
 // ReSharper disable once CheckNamespace
 namespace PlayListsParser
@@ -188,29 +189,43 @@ namespace PlayListsParser
 			}
 		}
 
-		[PropertyOrder(1)]
-		[Category("General")]
-		[Description("This property is a complex property and has no default editor.")]
-		public string FilterRegex { get; set; } = @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)";
-
-
-		[PropertyOrder(1)]
-		[Category("General")]
-		[Editor(typeof(PlsFilterCombobox), typeof(PlsFilterCombobox))]
-		[Description("This property is a complex property and has no default editor.")]
-		public string PlsFilter { get; set; }
-
-		[Browsable(false)]
-		public List<string> PlsFilterItems { get; set; }// = new List<string>() { @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)" };
-
-		[Browsable(false)]
-		public PlsFolderFilterList PlsFilterCollection { get; set; }
-
-
 		[PropertyOrder(2)]
 		[Category("General")]
 		[Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
 		public string OutputFolder { get; set; }
+
+		//[PropertyOrder(1)]
+		//[Category("General")]
+		//[Description("This property is a complex property and has no default editor.")]
+		//public string FilterRegex { get; set; } = @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)";
+
+
+		[PropertyOrder(1)]
+		[Category("General")]
+		[Editor(typeof(PgEditorFolderRegex), typeof(PgEditorFolderRegex))]
+		[Description("This property is a complex property and has no default editor.")]
+		public string PlsFilter { get; set; }
+
+
+		[Browsable(false)]
+		public PlsFolderFilterList PlsFilterCollection { get; set; } = new PlsFolderFilterList();
+
+
+		private int _plsFilterIndex = 0;
+
+		[Browsable(false)]
+		public int PlsFilterIndex
+		{
+			get
+			{
+				return _plsFilterIndex;
+			}
+			set
+			{
+				_plsFilterIndex = value;
+				NotifyPropertyChanged();
+			}
+		}
 
 		[Category("General")]
 		public bool RemoveDuplicates { get; set; }
@@ -263,6 +278,7 @@ namespace PlayListsParser
 		}
 
 		#endregion
+
 	}
 
 
@@ -294,38 +310,48 @@ namespace PlayListsParser
 
 	#region PlsFilterComboBox
 
-	public class PlsFilterCombobox : ComboBoxEditor
-	{
+	//public class PlsFilterCombobox : ComboBoxEditor
+	//{
 
-		protected override void SetControlProperties(PropertyItem propertyItem)
-		{
-			base.SetControlProperties(propertyItem);
+	//	protected override void SetControlProperties(PropertyItem propertyItem)
+	//	{
+	//		base.SetControlProperties(propertyItem);
 
-			this.Editor.IsEditable = true;
-		}
+	//		this.Editor.IsEditable = true;
+	//	}
 
-		protected override IEnumerable CreateItemsSource(PropertyItem propertyItem)
-		{
-			if (AppSettings.Instance.PlsFilterItems?.Count == 0)
-				AppSettings.Instance.PlsFilterItems.Add(@"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)");
+	//	protected override IEnumerable CreateItemsSource(PropertyItem propertyItem)
+	//	{
+	//		if (AppSettings.Instance.PlsFilterItems?.Count == 0)
+	//			AppSettings.Instance.PlsFilterItems.Add(@"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)");
 
-			return AppSettings.Instance.PlsFilterItems;
-		}
+	//		return AppSettings.Instance.PlsFilterItems;
+	//	}
 
-		//protected override void SetValueDependencyProperty()
-		//{
-		//	this.ValueProperty = ComboBox.ItemsSourceProperty;
-		//}
-	}
+	//	//protected override void SetValueDependencyProperty()
+	//	//{
+	//	//	this.ValueProperty = ComboBox.ItemsSourceProperty;
+	//	//}
+	//}
 
 	#endregion
 
 
 	#region PlsFolderFilterList
 
-	public class PlsFolderFilterList : ICollection<string>
+	public class PlsFolderFilterList : ICollection<string>, INotifyPropertyChanged, INotifyCollectionChanged
 	{
+
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		public event NotifyCollectionChangedEventHandler CollectionChanged;
+
 		private Dictionary<int, string> _dictionary = new Dictionary<int, string>();
+
+		private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
 
 		private List<int> UsedCounter
 		{
@@ -349,16 +375,29 @@ namespace PlayListsParser
 
 		public void Add(string item)
 		{
-			lock (_lock)
+			int index;
+			Add(item, out index);
+		}
+
+		public void Add(string item, out int index)
+		{
+			index = -1;
+			if (!_dictionary.ContainsValue(item))
 			{
-				int index = _dictionary.Keys.Max() + 1;
-				_dictionary.Add(index, item);
+				lock (_lock)
+				{
+					index = _dictionary.Count == 0 ? 0 : _dictionary.Keys.Max() + 1;
+					_dictionary.Add(index, item);
+				}
 			}
+			CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add,item));
+			return;
 		}
 
 		public void Clear()
 		{
 			_dictionary.Clear();
+			CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 		}
 
 		public bool Contains(string item)

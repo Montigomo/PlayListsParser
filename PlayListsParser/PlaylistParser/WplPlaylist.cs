@@ -40,7 +40,7 @@ namespace PlayListsParser.PlayLists
 		//	}
 		//	else if(File.Exists(uri))
 		//	{
-				
+
 		//	}
 		//	Document = LoadXDoc(uri);
 		//}
@@ -53,7 +53,7 @@ namespace PlayListsParser.PlayLists
 
 		private static XDocument LoadXDoc(string uri)
 		{
-			if(File.Exists(uri) && Path.GetExtension(uri) == ".wpl")
+			if (File.Exists(uri) && Path.GetExtension(uri) == ".wpl")
 			{
 				var xdoc = XDocument.Load(uri);
 
@@ -71,7 +71,7 @@ namespace PlayListsParser.PlayLists
 		private static XDocument CreateXDoc(string uri, string title, List<string> items)
 		{
 			title = title ?? Path.GetFileNameWithoutExtension(uri);
-			
+
 			var xdoc = new XDocument(
 				new XProcessingInstruction("wpl", "version=\"1.0\""),
 				new XElement("smil",
@@ -82,19 +82,28 @@ namespace PlayListsParser.PlayLists
 					)
 				)
 			);
-			if (items != null)
+			Add(xdoc, items);
+			return xdoc;
+		}
+
+		private static void Add(XDocument xdoc, IEnumerable<string> items)
+		{
+
+			if (items != null && items.Count() > 0)
 			{
-				//xdoc.XPathSelectElement("/smil/head").Add(new XElement("meta", new XAttribute("name", "ItemCount"), new XAttribute("content", items.Count)));
 				xdoc.XPathSelectElement("/smil").Add(
 					new XElement("body",
 						new XElement("seq", items.Select(f => new XElement("media", new XAttribute("src", f))))
 					)
 				);
 			}
-			return xdoc;
 		}
 
-		
+		private void Add(IEnumerable<string> items)
+		{
+			Add(Document, items);
+		}
+
 		#endregion
 
 		#region Properties & Members
@@ -133,7 +142,7 @@ namespace PlayListsParser.PlayLists
 			}
 			set
 			{
-				Document?.XPathSelectElement("/smil/body/seq").Add(value.Select(c => new XElement("media", new XAttribute("src", c))));
+				Add(value);
 			}
 		}
 
@@ -141,13 +150,15 @@ namespace PlayListsParser.PlayLists
 
 		#region Save
 
-		public void Save(string uri, bool overwrite = false)
+		public void Save(string uri = null, bool overwrite = false)
 		{
 			uri = uri ?? PlaylistPath;
+
 			if (uri == null)
 				throw new ArgumentNullException($@"{MethodBase.GetCurrentMethod().Name} path can't be null.");
 
-			XmlWriterSettings xws = new XmlWriterSettings	 {
+			XmlWriterSettings xws = new XmlWriterSettings
+			{
 				OmitXmlDeclaration = true,
 				Indent = true
 			};
@@ -208,7 +219,7 @@ namespace PlayListsParser.PlayLists
 		}
 
 		#endregion
-		
+
 
 	}
 }

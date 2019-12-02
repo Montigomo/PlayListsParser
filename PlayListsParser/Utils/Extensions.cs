@@ -30,7 +30,6 @@ namespace PlayListsParser
 
 			string finalPath;
 
-
 			if (!Path.IsPathRooted(path))
 				finalPath = basePath + "\\" + path;
 			else
@@ -124,6 +123,23 @@ namespace PlayListsParser
 
 		#region Others
 
+		private static bool IsValidRegex(this string pattern)
+		{
+			if (string.IsNullOrEmpty(pattern)) return false;
+
+			try
+			{
+				Regex.Match("", pattern);
+			}
+			catch (ArgumentException)
+			{
+				return false;
+			}
+
+			return true;
+		}
+
+
 		public static bool ToBoolean(this bool? value)
 		{
 			return value ?? false;
@@ -135,7 +151,7 @@ namespace PlayListsParser
 			{
 
 				var items = Directory.GetFiles(folderPath)
-					.Where(d => Regex.IsMatch(Path.GetFileName(d), regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase));
+					.Where(d => regexString.IsValidRegex() ? Regex.IsMatch(Path.GetFileName(d), regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase) : true);
 
 				foreach (var item in items)
 					yield return new PlayList(item);

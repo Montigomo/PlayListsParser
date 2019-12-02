@@ -11,9 +11,9 @@ namespace PlayListsParser.PlayLists
 	{
 		void SavePlaylist(string location, bool overwrite);
 
-		bool SaveItemsRaw(string folderPath);
+		bool SaveItems(string folderPath);
 
-		Task<bool> SaveItemsRawAsync(string folderPath);
+		Task<bool> SaveItemsAsync(string folderPath);
 
 		event ProgressChangedEventHandler ProgressChanged;
 

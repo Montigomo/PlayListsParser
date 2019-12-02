@@ -122,7 +122,10 @@ namespace PlayListsParser.PlayLists
 				}
 				else if (!String.IsNullOrWhiteSpace(filePath))
 				{
-					Add(System.IO.Path.GetFullPath(playlistFolder + "\\" + filePath));
+					if(Path.IsPathRooted(filePath))
+						Add(filePath);
+					else
+						Add(System.IO.Path.GetFullPath(playlistFolder + "\\" + filePath));
 				}
 				//}
 				//catch(Exception e)

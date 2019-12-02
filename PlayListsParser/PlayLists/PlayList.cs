@@ -20,6 +20,11 @@ namespace PlayListsParser.PlayLists
 
 		}
 
+		public static void Refresh()
+		{
+			_playLists = null;
+		}
+
 		private static void SettingsPropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
 			if (e.PropertyName == nameof(AppSettings.PlaylistsFolder))
@@ -36,7 +41,7 @@ namespace PlayListsParser.PlayLists
 			{
 				if (_playLists == null)
 				{
-					_playLists = new ObservableCollection<PlayList>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.FilterRegex));
+					_playLists = new ObservableCollection<PlayList>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.PlsFilter));
 				}
 				return _playLists;
 			}
@@ -188,7 +193,7 @@ namespace PlayListsParser.PlayLists
 				OutFolder = outFolder;
 
 			if (!String.IsNullOrWhiteSpace(OutFolder))
-				_parser.SaveItemsRaw(OutFolder);
+				_parser.SaveItems(OutFolder);
 		}
 
 		#endregion

@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:PlayListsParser"
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" 
     xmlns:SysMenu="clr-namespace:Agitech.Wpf.SysMenu;assembly=Agitech.Wpf.SysMenu" 
+    xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock" 
     x:Name="wndMain"
     x:Class="PlayListsParser.MainWindow"
     mc:Ignorable="d"
@@ -48,6 +49,11 @@
 						<EventSetter Event="ButtonBase.Click" Handler="columnHeader_Click" />
 					</Style>
 				</DataGrid.Resources>
+				<DataGrid.ContextMenu>
+					<ContextMenu>
+						<MenuItem Header="Refresh" Name="menuItemDgRefresh" Click="menuItemDgRefresh_Click"/>
+					</ContextMenu>
+				</DataGrid.ContextMenu>
 			</DataGrid>
 
 			<GridSplitter  HorizontalAlignment="Stretch" Width="5" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
