@@ -116,6 +116,7 @@ namespace PlaylistParser
 
 		#endregion
 
+
 		#region Backgroundworkwer
 
 		//private void InitBackgroundWorker()
@@ -147,6 +148,7 @@ namespace PlaylistParser
 		//}
 
 		#endregion
+
 
 		#region ProgressBar
 
@@ -183,7 +185,8 @@ namespace PlaylistParser
 
 		#endregion
 
-		#region Open Close file
+
+		#region ToggleControls
 
 		private void ToggleControls(params Control[] excludeControls)
 		{
@@ -206,9 +209,12 @@ namespace PlaylistParser
 					}
 				}
 			}
-
-			// CancelButton.Enabled = true;
 		}
+
+		#endregion
+
+
+		#region Folders pickup
 
 		//private void PlayListsFolderPickup()
 		//{
@@ -223,9 +229,7 @@ namespace PlaylistParser
 
 		//private void OutputFolderPickup()
 		//{
-
 		//	var dialog = new CommonOpenFileDialog() { IsFolderPicker = true, InitialDirectory = OutputFolder };
-
 		//	if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
 		//	{
 		//		OutputFolder = dialog.FileName;
@@ -324,11 +328,17 @@ namespace PlaylistParser
 					PlayList.PlayLists.ForEach(t => t.Prepare = !t.Prepare);
 					//e.Handled = true;
 				}
+				else if (columnHeader.DisplayIndex == 3 && columnHeader.Content.ToString() == "Repair")
+				{
+					PlayList.PlayLists.ForEach(t => t.Repair = !t.Repair);
+
+				}
 			}
 		}
 		private void DataGridMain_Sorting(object sender, DataGridSortingEventArgs e)
 		{
-			if (e.Column.DisplayIndex == 0 && e.Column.Header.Equals("#"))
+			if ((e.Column.DisplayIndex == 0 && e.Column.Header.Equals("#"))
+				 || (e.Column.DisplayIndex == 3 && e.Column.Header.Equals("Repair")))
 			{
 				//PlayLists.ForEach(t => t.Prepare = !t.Prepare);
 				e.Handled = true;
@@ -341,7 +351,7 @@ namespace PlaylistParser
 			{
 				RunPlayListItemsSaveAsync();
 			}
-			else if(RunMenuItem.Header.ToString() == "Cancel")
+			else if (RunMenuItem.Header.ToString() == "Cancel")
 			{
 				RunPlayListItemsSaveAsync(true);
 			}

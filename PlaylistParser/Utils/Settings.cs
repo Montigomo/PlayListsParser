@@ -180,6 +180,7 @@ namespace PlaylistParser
 		[Editor(typeof(PgEditorFile), typeof(PgEditorFile))]
 		[PropertyOrder(0)]
 		[Description("Playlists location folder. Not support recursive search.")]
+		[DisplayName("Playlists folder")]
 		public string PlaylistsFolder
 		{
 			get => _playListsFolder;
@@ -200,6 +201,7 @@ namespace PlaylistParser
 		[Category("General")]
 		[Editor(typeof(PgEditorFolderRegex), typeof(PgEditorFolderRegex))]
 		[Description("Filter regex for playlist names.")]
+		[DisplayName("Playlists filter")]
 		public string PlsFilter { get; set; }
 
 		// @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)"
