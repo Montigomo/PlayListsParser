@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
+
 namespace PlaylistParser.PlayLists
 {
 	public class PlaylistParserBase
@@ -14,7 +17,7 @@ namespace PlaylistParser.PlayLists
 
 		public PlaylistParserBase(string filePath)
 		{
-			FilePath = filePath;
+			PlaylistPath = filePath;
 			Name = System.IO.Path.GetFileNameWithoutExtension(filePath);
 
 		}
@@ -26,6 +29,26 @@ namespace PlaylistParser.PlayLists
 
 
 		#region EventHandler
+
+
+		#region PropertyChanges
+
+		public event PropertyChangedEventHandler PropertyChanged;
+
+		// This method is called by the Set accessor of each property.
+		// The CallerMemberName attribute that is applied to the optional propertyName
+		// parameter causes the property name of the caller to be substituted as an argument.
+		private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+		//protected void RaisePropertyChangedEvent(PropertyChangedEventArgs e = null)
+		//{
+		//	PropertyChanged?.Invoke(this, e);
+		//}
+
+		#endregion
 
 		public event ProgressChangedEventHandler ProgressChanged;
 
@@ -43,11 +66,29 @@ namespace PlaylistParser.PlayLists
 
 		public string Title { get; protected set; }
 
-		public string FilePath { get; protected set; }
+		public string PlaylistPath { get; protected set; }
 
 		//private List<PlayListItem> _items = new List<PlayListItem>();
 
 		public virtual List<PlayListItem> Items { get; set; }
+
+		private bool _isNeedRepair = false;
+
+		public virtual bool IsNeedRepair
+		{
+			get
+			{
+				return _isNeedRepair;
+			}
+			private set
+			{
+				if (value != _isNeedRepair)
+				{
+					_isNeedRepair = value;
+					NotifyPropertyChanged();
+				}
+			}
+		}
 
 		#endregion
 
@@ -60,6 +101,30 @@ namespace PlaylistParser.PlayLists
 
 		#endregion
 
+
+		#region Check && Repair
+
+		public bool Check()
+		{
+			var result = true;
+
+			foreach (var item in Items)
+			{
+				if (!File.Exists(item.Path))
+				{
+					result = false;
+					IsNeedRepair = true;
+				}
+			}
+			return result;
+		}
+
+		public void Repair()
+		{
+
+		}
+
+		#endregion
 
 		#region SaveItemsRaw
 
@@ -75,36 +140,29 @@ namespace PlaylistParser.PlayLists
 
 			foreach (var item in Items)
 			{
-				string title = System.IO.Path.GetFileName(item.Path);
+				string fileName = System.IO.Path.GetFileName(item.Path);
 
-				var filePathDest = System.IO.Path.GetFullPath(folderPath + "\\" + title);
+				var filePathDest = System.IO.Path.GetFullPath(folderPath + "\\" + fileName);
 
-				var fileExtension = System.IO.Path.GetExtension(title);
+				var fileExtension = System.IO.Path.GetExtension(fileName);
 
 				try
 				{
-
 					var tagVar = TagLib.File.Create(item.Path);
-
 					var artist = String.Join(", ", tagVar.Tag.Performers);
+					var title = tagVar.Tag.Title;
 
-					if (!string.IsNullOrWhiteSpace(artist) && !string.IsNullOrWhiteSpace(tagVar.Tag.Title))
+					if (!string.IsNullOrWhiteSpace(artist) && !string.IsNullOrWhiteSpace(title))
 					{
-						title = $@"{String.Join(", ", tagVar.Tag.Performers)} - {tagVar.Tag.Title}";
+						fileName = $@"{artist} - {title}";
 
-						//string illegal = folderPath + "\\" + title;
-						string regexSearch = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+						fileName = fileName.SanitizePath();
 
-						Regex r = new Regex($"[{Regex.Escape(regexSearch)}]");
-
-						title = r.Replace(title, "");
-
-						filePathDest = System.IO.Path.GetFullPath(folderPath + "\\" + title + fileExtension);
+						filePathDest = System.IO.Path.GetFullPath(folderPath + "\\" + fileName + fileExtension);
 					}
 				}
 				catch (Exception e)
 				{
-					//title = Path.GetFileName(item.Path);
 					Console.WriteLine($@"{Name} - {e.Message}");
 				}
 
@@ -115,8 +173,7 @@ namespace PlaylistParser.PlayLists
 
 				try
 				{
-					if (!(AppSettings.Instance.UseTask && File.Exists(filePathDest)))
-						File.Copy(item.Path, filePathDest, true);
+					File.Copy(item.Path, filePathDest, true);
 				}
 				catch (System.IO.DirectoryNotFoundException e)
 				{
@@ -125,6 +182,10 @@ namespace PlaylistParser.PlayLists
 				catch (System.IO.FileNotFoundException e)
 				{
 					Console.WriteLine($@"{Name} - {e.Message}");
+				}
+				catch (System.IO.IOException ex) when (ex.HResult == unchecked((int)0x80070020) && AppSettings.Instance.UseTask)
+				{
+					//0x80070020
 				}
 
 				RaiseProgressChangedEvent();// new ProgressChangedEventArgs((currentCount * 100) / totalCount, null));

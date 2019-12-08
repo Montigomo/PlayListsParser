@@ -49,12 +49,12 @@ namespace PlaylistParser.PlayLists
 			// 2 - path to file
 			string _linem3u = $"#EXTINF:{{0}},{{1}}{Environment.NewLine}{{2}}{Environment.NewLine}";
 
-			uri = uri ?? FilePath;
+			uri = uri ?? PlaylistPath;
 
 			FileAttributes attr = File.GetAttributes(uri);
 
 			if (attr.HasFlag(FileAttributes.Directory))
-				uri = System.IO.Path.Combine(uri, System.IO.Path.GetFileName(FilePath));
+				uri = System.IO.Path.Combine(uri, System.IO.Path.GetFileName(PlaylistPath));
 
 			StringBuilder sbn = new StringBuilder();
 
@@ -97,14 +97,14 @@ namespace PlaylistParser.PlayLists
 
 		private void Parse()
 		{
-			if (!File.Exists(FilePath))
+			if (!File.Exists(PlaylistPath))
 				return;
 
 			//Items = new List<PlayListItem>();
 
-			var playlistFolder = System.IO.Path.GetDirectoryName(FilePath);
+			//var playlistFolder = System.IO.Path.GetDirectoryName(FilePath);
 
-			foreach (string filePath in File.ReadAllLines(FilePath, Encoding.GetEncoding(1251)))
+			foreach (string filePath in File.ReadAllLines(PlaylistPath, Encoding.GetEncoding(1251)))
 			{
 				//try
 				//{
@@ -125,7 +125,7 @@ namespace PlaylistParser.PlayLists
 					if(Path.IsPathRooted(filePath))
 						Add(filePath);
 					else
-						Add(System.IO.Path.GetFullPath(playlistFolder + "\\" + filePath));
+						Add(Extensions.GetAbsolutePathSimple(PlaylistPath, filePath));
 				}
 				//}
 				//catch(Exception e)
@@ -134,7 +134,7 @@ namespace PlaylistParser.PlayLists
 				//}
 			}
 
-			Title = System.IO.Path.GetFileNameWithoutExtension(FilePath);
+			Title = System.IO.Path.GetFileNameWithoutExtension(PlaylistPath);
 		}
 
 		#endregion

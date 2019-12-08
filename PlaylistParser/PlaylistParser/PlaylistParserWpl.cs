@@ -48,7 +48,7 @@ namespace PlaylistParser.PlayLists
 
 		public void SavePlaylist(string uri, bool overwrite = false)
 		{
-			uri = uri ?? FilePath;
+			uri = uri ?? PlaylistPath;
 
 			if (String.IsNullOrWhiteSpace(uri))
 				throw new ArgumentNullException("uri");
@@ -57,6 +57,7 @@ namespace PlaylistParser.PlayLists
 		}
 
 		#endregion
+
 
 		#region Add
 
@@ -67,11 +68,12 @@ namespace PlaylistParser.PlayLists
 
 		#endregion
 
+
 		#region Parse
 
 		public void Parse()
 		{
-			Playlist = WplPlaylist.Load(FilePath);
+			Playlist = WplPlaylist.Load(PlaylistPath);
 
 			Title = Playlist.Title;
 

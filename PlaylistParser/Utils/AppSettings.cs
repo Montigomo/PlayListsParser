@@ -197,17 +197,30 @@ namespace PlaylistParser
 		[Description("Folder to which will be saved playlist items or other work on them results.")]
 		public string OutputFolder { get; set; }
 
+
+		private string _plsFilter;
+
 		[PropertyOrder(1)]
 		[Category("General")]
 		[Editor(typeof(PgEditorFolderRegex), typeof(PgEditorFolderRegex))]
 		[Description("Filter regex for playlist names.")]
 		[DisplayName("Playlists filter")]
-		public string PlsFilter { get; set; }
+		public string PlsFilter
+		{
+			get { return _plsFilter; }
+			set
+			{
+				if (String.Compare(_plsFilter, value, StringComparison.Ordinal) != 0)
+				{
+					_plsFilter = value;
+					NotifyPropertyChanged();
+				}
+			}
+		}
 
 		// @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)"
 		[Browsable(false)]
 		public PlsFolderFilterList PlsFilterCollection { get; set; } = new PlsFolderFilterList() { "*", @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)" };
-
 
 		private int _plsFilterIndex = 0;
 

@@ -24,7 +24,6 @@ namespace PlaylistParser
 			var binding = new Binding()
 			{
 				Source = AppSettings.Instance.PlsFilterCollection,
-				//Path = AppSettings.Instance.PlsFilterItems,
 				Mode = BindingMode.OneWay
 			};
 
@@ -49,8 +48,7 @@ namespace PlaylistParser
 
 		public static readonly DependencyProperty ValueProperty =
 				DependencyProperty.Register(
-						"Value",
-						typeof(string), typeof(PgEditorFolderRegex),
+						"Value", typeof(string), typeof(PgEditorFolderRegex),
 						new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
 		public string Value
@@ -74,7 +72,10 @@ namespace PlaylistParser
 		private void comboBoxMain_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			if (comboBoxMain.SelectedIndex > -1)
+			{
 				AppSettings.Instance.PlsFilterIndex = comboBoxMain.SelectedIndex;
+				//Value = comboBoxMain.Text;
+			}
 		}
 
 		private void _uc_Loaded(object sender, RoutedEventArgs e)

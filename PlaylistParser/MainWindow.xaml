@@ -4,13 +4,14 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:PlaylistParser"
+		xmlns:local2="clr-namespace:PlaylistParser.PlayLists"
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" 
     xmlns:SysMenu="clr-namespace:Agitech.Wpf.SysMenu;assembly=Agitech.Wpf.SysMenu" 
     xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock" 
     x:Name="wndMain"
     x:Class="PlaylistParser.MainWindow"
     mc:Ignorable="d"
-    Title="MainWindow" Height="600" Width="990" 
+    Title="MainWindow" Height="600" Width="1000" 
     Loaded="wndMain_Loaded">
 
 	<Window.Resources>
@@ -25,12 +26,20 @@
 		</Grid.RowDefinitions>
 
 		<Menu Height="22" x:Name="MainMenu" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3" MouseDoubleClick="MainMenu_MouseDoubleClick">
-			<MenuItem x:Name="RunMenuItem" Header="Run" Height="22" Click="_runMenuItem_Click" Tag="toggle|Run|Cancel"/>
-			<MenuItem x:Name="menuItemRepare" Header="Repare" Height="22" Tag="toggle" Click="menuItemRepare_Click"/>
-			<MenuItem Header="Test" Click="_testMenuItem_Click"  Tag="toggle"/>
+			<MenuItem x:Name="menuItemRun" Header="Run" Height="22" Click="menuItemRun_Click" Tag="toggle|Run|Cancel">
+				<MenuItem.ToolTip>
+					<TextBlock Text="Extract all items from selected playlists and save it to destination" Background="LightGoldenrodYellow" />
+				</MenuItem.ToolTip>
+			</MenuItem>
+			<MenuItem Header="Tools" Tag="toggle">
+				<MenuItem x:Name="menuItemRepare" Header="Repair" Height="22" Tag="toggle" Click="menuItemRepare_Click"/>
+				<MenuItem x:Name="menuItemCheck" Header="Check" Height="22" Tag="toggle" Click="menuItemCheck_Click" />
+			</MenuItem>
+			<MenuItem Header="Test" Click="_testMenuItem_Click"  Tag="toggle" />
 			<!--<MenuItem Header="{Resx _helpMenuItem.Header}" Name="_helpMenuItem">
-                <MenuItem Header="{Resx _aboutMenuItem.Header}" Icon="{Resx _aboutMenuItem.Icon}" Name="_aboutMenuItem" />
-            </MenuItem>-->
+			<MenuItem Header="{Resx _aboutMenuItem.Header}" Icon="{Resx _aboutMenuItem.Icon}" Name="_aboutMenuItem" />
+      </MenuItem>-->
+			<MenuItem Header="Help"/>
 		</Menu>
 
 		<Grid Grid.Row="1">
@@ -45,6 +54,22 @@
 			</Grid.RowDefinitions>
 
 			<DataGrid x:Name="DataGridMain" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"  Tag="toggle" Sorting="DataGridMain_Sorting">
+				<DataGrid.RowStyle>
+					<Style TargetType="DataGridRow">
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding IsNeedRepair}" Value="True">
+								<Setter Property="Background">
+									<Setter.Value>
+										<SolidColorBrush Color="#FFFFC580" Opacity="0.7"/>
+									</Setter.Value>
+								</Setter>
+							</DataTrigger>
+							<DataTrigger Binding="{Binding IsNeedRepair}" Value="False">
+								<Setter Property="Background" Value="White"></Setter>
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</DataGrid.RowStyle>
 				<DataGrid.Resources>
 					<Style TargetType="{x:Type DataGridColumnHeader}">
 						<EventSetter Event="ButtonBase.Click" Handler="columnHeader_Click" />

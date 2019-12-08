@@ -57,7 +57,6 @@ namespace PlaylistParser.PlayLists
 			{
 				var xdoc = XDocument.Load(uri);
 
-
 				return xdoc;
 			}
 			return null;
@@ -106,6 +105,7 @@ namespace PlaylistParser.PlayLists
 
 		#endregion
 
+
 		#region Properties & Members
 
 		private static string Generator { get; set; } = App.AppTitle;
@@ -132,6 +132,7 @@ namespace PlaylistParser.PlayLists
 
 		#endregion
 
+
 		#region Items
 
 		public IEnumerable<string> Items
@@ -147,6 +148,7 @@ namespace PlaylistParser.PlayLists
 		}
 
 		#endregion
+
 
 		#region Save
 

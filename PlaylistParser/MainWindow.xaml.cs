@@ -12,6 +12,8 @@ using System.Text;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Threading.Tasks;
 
 namespace PlaylistParser
 {
@@ -28,26 +30,51 @@ namespace PlaylistParser
 
 			InitializeComponent();
 
-			Title = App.AppTitle;
+			Initialize();
 
+		}
+
+		TextWriter _writer;
+
+		private void Initialize()
+		{
 			_writer = new TextBoxStreamWriter(TextBoxLog);
+
+			Title = App.AppTitle;
 
 			Binding();
 
 			PropertyGridMain.SelectedObject = AppSettings.Instance;
 
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
-
+			PlayList.PropertyChangedStatic += PlayList_PropertyChangedStatic;
+			RepairToggle();
 		}
 
-		TextWriter _writer;
-
+		private void PlayList_PropertyChangedStatic(object sender, PropertyChangedEventArgs e)
+		{
+			switch (e.PropertyName)
+			{
+				case nameof(PlayList.IsNeedRepair):
+					RepairToggle();
+					break;
+				default:
+					break;
+			}
+		}
 
 		private void SettingsPropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
-			if (e.PropertyName == nameof(AppSettings.PlaylistsFolder))
+			switch (e.PropertyName)
 			{
-				RefreshPlaylists();
+				case nameof(AppSettings.PlaylistsFolder):
+					RefreshPlaylists();
+					break;
+				case nameof(AppSettings.PlsFilter):
+					RefreshPlaylists();
+					break;
+				default:
+					break;
 			}
 		}
 
@@ -80,27 +107,71 @@ namespace PlaylistParser
 
 			DataGridMain.SetBinding(ItemsControl.ItemsSourceProperty, dgBinding);
 
+			#region Create Datagrid columns
+
 			if (!_initGrid)
 			{
 				DataGridMain.AutoGenerateColumns = false;
+
+				DataGridMain.Columns.Add(new DataGridTextColumn()
+				{
+					Binding = new Binding("Name") { Mode = BindingMode.OneWay },
+					Header = "Name"
+				});
+
+				//DataGridMain.Columns.Add(new DataGridTextColumn()
+				//{
+				//	Binding = new Binding("Title") { Mode = BindingMode.OneWay },
+				//	Header = "Title"
+				//});
+
+				DataGridMain.Columns.Add(new DataGridTextColumn()
+				{
+					Binding = new Binding("FilePath") { Mode = BindingMode.OneWay },
+					Header = "Path"
+				});
+
 				DataGridMain.Columns.Add(new DataGridCheckBoxColumn()
 				{
-					Binding = new Binding("Prepare") { Mode = BindingMode.TwoWay },
-					//CanUserSort = false,
-					Header = "#"
+					Binding = new Binding("Process") { Mode = BindingMode.TwoWay },
+					Header = CreateHeader("Extract", "Extract playlist items")
 				});
-				DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Name") { Mode = BindingMode.OneWay }, Header = "Name" });
-				//DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("Title") { Mode = BindingMode.OneWay }, Header = "Title" });
-				DataGridMain.Columns.Add(new DataGridTextColumn() { Binding = new Binding("FilePath") { Mode = BindingMode.OneWay }, Header = "Path" });
+
 				DataGridMain.Columns.Add(new DataGridCheckBoxColumn()
 				{
 					Binding = new Binding("Repair") { Mode = BindingMode.TwoWay },
-					Header = "Repair"
+					Header = CreateHeader("Repair", "Repair playlist from invalid path items")
 				});
 
 				_initGrid = true;
 			}
+
+			#endregion
+
 		}
+
+		private TextBlock CreateHeader(string text, string tooltip = null)
+		{
+			var tb = new TextBlock()
+			{
+				Text = text
+			};
+
+			if (!String.IsNullOrWhiteSpace(tooltip))
+				tb.ToolTip = CreateTooltip(tooltip);
+
+			return tb;
+		}
+
+		private ToolTip CreateTooltip(string content)
+		{
+			return new ToolTip()
+			{
+				Content = content,
+				Background = new SolidColorBrush() { Color = Colors.LightGoldenrodYellow }
+			};
+		}
+
 
 		#endregion
 
@@ -169,14 +240,14 @@ namespace PlaylistParser
 				ProgressBarMain.Value = 0;
 				ProgressBarMain.Minimum = 0;
 				ProgressBarMain.Maximum = max;
-				PlayList.ProgressChanged += ProgressChanged;
+				PlayList.ProgressChangedStatic += ProgressChanged;
 				ProgressBarMain.Visibility = Visibility.Visible;
 			}));
 		}
 
 		private void ProgressBarHide()
 		{
-			Application.Current?.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
+			this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
 			{
 				if (ProgressBarMain != null)
 					ProgressBarMain.Visibility = Visibility.Hidden;
@@ -240,13 +311,28 @@ namespace PlaylistParser
 
 
 		#region TEST
+
+		#region Check
+
+		private async void Check()
+		{
+			await Task.WhenAll(PlayList.PlayLists.Select(item => item.CheckAsync()));
+		}
+
+		private void RepairToggle()
+		{
+			this.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+			{
+				this.menuItemRepare.IsEnabled = PlayList.PlayLists.Any(item => item.IsNeedRepair);
+			}));
+		}
+
+		#endregion
+
 		private void Test()
 		{
-			var ctrl = RunMenuItem as Control;
-
-			ctrl.SetDependencyPropertyValue("Header", "Fuck");
-
-
+			//PlayList.ReapairNeed = true;
+			//PlayList.PlayLists.ForEach(item => item.Check());
 
 		}
 
@@ -257,7 +343,7 @@ namespace PlaylistParser
 
 		private async void RunPlayListItemsSaveAsync(bool cancel = false)
 		{
-			ToggleControls(RunMenuItem);
+			ToggleControls(menuItemRun);
 
 			if (AppSettings.Instance.ClearFolder)
 			{
@@ -287,7 +373,7 @@ namespace PlaylistParser
 				},
 				ProgressBarInit).ContinueWith((v) => ProgressBarHide());
 
-			ToggleControls(RunMenuItem);
+			ToggleControls(menuItemRun);
 		}
 
 		private void SetAttributesNormal(DirectoryInfo dir)
@@ -325,7 +411,7 @@ namespace PlaylistParser
 			{
 				if (columnHeader.DisplayIndex == 0 && columnHeader.Content.ToString() == "#")
 				{
-					PlayList.PlayLists.ForEach(t => t.Prepare = !t.Prepare);
+					PlayList.PlayLists.ForEach(t => t.Process = !t.Process);
 					//e.Handled = true;
 				}
 				else if (columnHeader.DisplayIndex == 3 && columnHeader.Content.ToString() == "Repair")
@@ -345,13 +431,13 @@ namespace PlaylistParser
 			}
 		}
 
-		private void _runMenuItem_Click(object sender, RoutedEventArgs e)
+		private void menuItemRun_Click(object sender, RoutedEventArgs e)
 		{
-			if (RunMenuItem.Header.ToString() == "Run")
+			if (menuItemRun.Header.ToString() == "Run")
 			{
 				RunPlayListItemsSaveAsync();
 			}
-			else if (RunMenuItem.Header.ToString() == "Cancel")
+			else if (menuItemRun.Header.ToString() == "Cancel")
 			{
 				RunPlayListItemsSaveAsync(true);
 			}
@@ -388,6 +474,11 @@ namespace PlaylistParser
 		{
 
 		}
+
+		private void menuItemCheck_Click(object sender, RoutedEventArgs e)
+		{
+			Check();
+		}
 	}
 
 	#region Converters
@@ -407,43 +498,5 @@ namespace PlaylistParser
 	}
 
 	#endregion
-
-	#region TextBoxStreamWriter
-
-	public class TextBoxStreamWriter : TextWriter
-	{
-		readonly TextBox _output;
-
-		public TextBoxStreamWriter(TextBox output)
-		{
-			_output = output;
-		}
-
-		public override void Write(char value)
-		{
-			base.Write(value);
-			_output.Dispatcher.BeginInvoke(DispatcherPriority.Background,
-				new Action(() => _output.AppendText(value.ToString())));
-			// When character data is written, append it to the text box.
-		}
-
-		public override Encoding Encoding => Encoding.UTF8;
-
-	}
-
-	#endregion
-
-	//interface IExample
-	//{
-	//    void test();
-	//}
-
-	//class CExample : IExample
-	//{
-	//    void IExample.test()
-	//    {
-	//        Console.WriteLine("test");
-	//    }
-	//}
 
 }

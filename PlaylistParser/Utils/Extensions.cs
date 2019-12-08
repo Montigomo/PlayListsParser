@@ -19,6 +19,36 @@ namespace PlaylistParser
 	static class Extensions
 	{
 
+		#region File && Folders path
+
+		public static string SanitizePath(this string path)
+		{
+			string regexSearch = Regex.Escape(new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars()));
+
+			string invalidRegStr = $@"([{regexSearch}]*\.+$)|([{regexSearch}]+)";
+
+			Regex r = new Regex($"[{regexSearch}]");
+
+			var reservedWords = new[]
+			{
+				"CON", "PRN", "AUX", "CLOCK$", "NUL", "COM0", "COM1", "COM2", "COM3", "COM4",
+				"COM5", "COM6", "COM7", "COM8", "COM9", "LPT0", "LPT1", "LPT2", "LPT3", "LPT4",
+				"LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+			};
+
+			var result = r.Replace(path, "");
+
+			//foreach (var reservedWord in reservedWords)
+			//{
+			//	var reservedWordPattern = $"^{reservedWord}\\.";
+			//	result = Regex.Replace(result, reservedWordPattern, "", RegexOptions.IgnoreCase);
+			//}
+
+			return result;
+		}
+
+		#endregion
+
 		#region GetRelativePath
 
 		// Path.GetFullPath((new Uri(absolute_path)).LocalPath);

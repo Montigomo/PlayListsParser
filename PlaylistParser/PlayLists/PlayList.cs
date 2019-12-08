@@ -12,7 +12,7 @@ namespace PlaylistParser.PlayLists
 	internal class PlayList : INotifyPropertyChanged
 	{
 
-		#region Static save methods
+		#region Static methods
 
 		static PlayList()
 		{
@@ -31,7 +31,7 @@ namespace PlaylistParser.PlayLists
 		{
 			if (e.PropertyName == nameof(AppSettings.PlaylistsFolder))
 			{
-				_playLists = null;
+				Refresh();
 			}
 		}
 
@@ -57,7 +57,7 @@ namespace PlaylistParser.PlayLists
 
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 
-			var workedPlaylists = PlayLists.Where(p => p.Prepare).ToList();
+			var workedPlaylists = PlayLists.Where(p => p.Process).ToList();
 
 			var count = workedPlaylists.Aggregate(0, (result, element) => result + element.Items.Count);
 
@@ -75,9 +75,37 @@ namespace PlaylistParser.PlayLists
 			_pbProgress = 0;
 		}
 
-		public static event ProgressChangedEventHandler ProgressChanged;
+		#region Static Progress handler
+
+		public static event ProgressChangedEventHandler ProgressChangedStatic;
 
 		#endregion
+
+
+		public static event PropertyChangedEventHandler PropertyChangedStatic;
+
+		// This method is called by the Set accessor of each property.
+		// The CallerMemberName attribute that is applied to the optional propertyName
+		// parameter causes the property name of the caller to be substituted as an argument.
+		private void NotifyPropertyChangedStatic([CallerMemberName] String propertyName = "")
+		{
+			PropertyChangedStatic?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+
+		public static void CheckAll()
+		{
+			Task.WhenAll(PlayList.PlayLists.Select(item => item.CheckAsync()));
+		}
+
+		#endregion
+
+
+		#region Static Properties
+
+
+		#endregion
+
 
 		#region Properties
 
@@ -85,19 +113,7 @@ namespace PlaylistParser.PlayLists
 
 		public List<PlayListItem> Items => _parser.Items.ToList();
 
-		private bool _prepare = true;
-
-		public bool Prepare
-		{
-			get => _prepare;
-			set
-			{
-				_prepare = value;
-				NotifyPropertyChanged();
-			}
-		}
-
-		public string FilePath => _parser.FilePath;
+		public string FilePath => _parser.PlaylistPath;
 
 		public string Name => _parser.Name;
 
@@ -105,8 +121,27 @@ namespace PlaylistParser.PlayLists
 
 		public string OutFolder { get; set; }
 
-		private bool _repair = false;
 
+		private bool _process = true;
+
+		/// <summary>
+		/// Is playlist will be processed
+		/// </summary>
+		public bool Process
+		{
+			get => _process;
+			set
+			{
+				_process = value;
+				NotifyPropertyChanged();
+			}
+		}
+
+
+		private bool _repair = false;
+		/// <summary>
+		/// Is play list will be repaired
+		/// </summary>
 		public bool Repair
 		{
 			get => _repair;
@@ -117,19 +152,48 @@ namespace PlaylistParser.PlayLists
 			}
 		}
 
+
 		private bool _needRepair = false;
 
-		public bool NeedRepair
+		/// <summary>
+		/// Is playlist contains missed or broken items and need to repair
+		/// </summary>
+		public bool IsNeedRepair
 		{
-			get => _needRepair;
-			set
-			{
-				_needRepair = true;
-				NotifyPropertyChanged();
-			}
+			get => _parser.IsNeedRepair;
 		}
 
 		#endregion
+
+
+		#region Methods
+
+		public void Rename()
+		{
+			if (Title != Name)
+			{
+				File.Move(FilePath, Path.Combine(Path.GetDirectoryName(FilePath) ?? throw new InvalidOperationException(), Title + Path.GetExtension(FilePath)));
+			}
+		}
+
+
+		public Task CheckAsync()
+		{
+			return Task.Factory.StartNew(() =>
+			{
+				Check();
+			},
+			TaskCreationOptions.LongRunning);
+		}
+
+		public void Check()
+		{
+			_parser.Check();
+		}
+
+
+		#endregion
+
 
 		#region Constructor && Initialize
 
@@ -156,21 +220,24 @@ namespace PlaylistParser.PlayLists
 			}
 
 			_parser.ProgressChanged += _parser_ProgressChanged;
+			_parser.PropertyChanged += _parser_PropertyChanged;
 
-		}
-
-
-		public void Rename()
-		{
-			if (Title != Name)
-			{
-				File.Move(FilePath, Path.Combine(Path.GetDirectoryName(FilePath) ?? throw new InvalidOperationException(), Title + Path.GetExtension(FilePath)));
-			}
 		}
 
 		#endregion
 
 		#region Events
+
+		private void _parser_PropertyChanged(object sender, PropertyChangedEventArgs e)
+		{
+			if (e.PropertyName == nameof(IPlaylistParser.IsNeedRepair))
+			{
+				NotifyPropertyChanged(nameof(IsNeedRepair));
+				NotifyPropertyChangedStatic(nameof(IsNeedRepair));
+			}
+		}
+
+
 
 		private static int _pbProgress = 0;
 
@@ -179,7 +246,7 @@ namespace PlaylistParser.PlayLists
 			_pbProgress = _pbProgress + 1;
 			e = new ProgressChangedEventArgs(_pbProgress, null);
 
-			ProgressChanged?.Invoke(sender, e);
+			ProgressChangedStatic?.Invoke(sender, e);
 		}
 
 		#endregion
