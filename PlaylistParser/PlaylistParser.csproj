@@ -104,12 +104,10 @@
     <Compile Include="Controls\PgEditorFile.xaml.cs">
       <DependentUpon>PgEditorFile.xaml</DependentUpon>
     </Compile>
-    <Compile Include="PlaylistParser\PlayListParserBase.cs" />
-    <Compile Include="PlaylistParser\PlaylistParserM3u.cs" />
+    <Compile Include="PlayLists\PlaylistM3u.cs" />
     <Compile Include="Controls\SettingWindow.xaml.cs">
       <DependentUpon>SettingWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="PlaylistParser\WplPlaylist.cs" />
     <Compile Include="Tags\TagHelper.cs" />
     <Compile Include="Utils\Extensions.cs" />
     <Compile Include="Utils\IconButton.cs" />
@@ -142,10 +140,10 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PlaylistParser\IPlaylistParser.cs" />
-    <Compile Include="PlayLists\PlayList.cs" />
+    <Compile Include="PlayLists\IPlaylist.cs" />
+    <Compile Include="PlayLists\PlaylistBase.cs" />
     <Compile Include="PlayLists\PlayListItem.cs" />
-    <Compile Include="PlaylistParser\PlaylistParserWpl.cs" />
+    <Compile Include="PlayLists\PlaylistWpl.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

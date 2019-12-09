@@ -9,19 +9,62 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using PlaylistParser;
 
-namespace PlaylistParser.PlayLists
+// ReSharper disable once CheckNamespace
+namespace PlaylistParser.Playlist
 {
-	class WplPlaylist
+	internal class PlaylistWpl : PlaylistBase, IPlaylist
 	{
 
 		#region Constructor
 
-		public WplPlaylist()
+		public PlaylistWpl(string filePath) : base(filePath)
 		{
+			Parse();
 		}
 
+		//private PlaylistParserWpl(): base()
+		//{
+
+		//}
+
+		#endregion
+
+
+		#region Properties
+
+
+		#endregion
+
+
+		#region SavePlaylist
+
+		public void SavePlaylist(string uri , bool overwrite)
+		{
+			uri = uri ?? PlaylistPath;
+
+			if (String.IsNullOrWhiteSpace(uri))
+				throw new ArgumentNullException("uri");
+
+			Save(uri, overwrite);
+		}
+
+		#endregion
+
+
+		#region Parse
+
+		public void Parse()
+		{
+			Document = LoadXDoc(PlaylistPath);
+			return;
+		}
+
+		#endregion
+
+		#region Wpl realization
+
 		/// <summary>
-		/// Mad constructor with multi action depans on its parameters
+		/// Constructor with multi action depands on its parameters
 		/// </summary>
 		/// <param name="uri"></param>
 		/// <param name="items"></param>
@@ -29,25 +72,10 @@ namespace PlaylistParser.PlayLists
 		/// Case 2 - uri is existing playlist, items = null, action - read existing playlist(uri)
 		/// Case 3 - uri is existing playlist, items = null, action - create playlist(uri) and then overwrite it
 		/// Case 4 - uri is file path (exists or not), items != null, action -  create new playlist and add to it all items
-		//public WplPlaylist(string uri, string items = null)
-		//{
 
-		//	PlaylistPath = uri;
-
-		//	if (uri.IsDirectory())
-		//	{
-
-		//	}
-		//	else if(File.Exists(uri))
-		//	{
-
-		//	}
-		//	Document = LoadXDoc(uri);
-		//}
-
-		public static WplPlaylist Load(string uri)
+		public static PlaylistWpl Load(string uri)
 		{
-			var wplplaylist = new WplPlaylist() { Document = LoadXDoc(uri), PlaylistPath = uri };
+			var wplplaylist = new PlaylistWpl(uri) { Document = LoadXDoc(uri), PlaylistPath = uri };
 			return wplplaylist;
 		}
 
@@ -62,9 +90,9 @@ namespace PlaylistParser.PlayLists
 			return null;
 		}
 
-		public static WplPlaylist Create(string uri, string title = null, List<string> items = null)
+		public static PlaylistWpl Create(string uri, string title = null, List<string> items = null)
 		{
-			return new WplPlaylist() { Document = CreateXDoc(uri, title, items), PlaylistPath = uri };
+			return new PlaylistWpl(uri) { Document = CreateXDoc(uri, title, items), PlaylistPath = uri };
 		}
 
 		private static XDocument CreateXDoc(string uri, string title, List<string> items)
@@ -103,21 +131,18 @@ namespace PlaylistParser.PlayLists
 			Add(Document, items);
 		}
 
-		#endregion
-
 
 		#region Properties & Members
 
 		private static string Generator { get; set; } = App.AppTitle;
 
-		public string PlaylistPath { get; private set; }
 
 		public string PlaylistFolder
 		{
 			get => Path.GetDirectoryName(PlaylistPath);
 		}
 
-		public string Title
+		public override string Title
 		{
 			get => Document?.XPathSelectElement("/smil/head/title").Value;
 		}
@@ -135,15 +160,27 @@ namespace PlaylistParser.PlayLists
 
 		#region Items
 
-		public IEnumerable<string> Items
+		private List<PlayListItem> _items;
+
+		public override List<PlayListItem> Items
 		{
 			get
 			{
-				return Document?.XPathSelectElements("/smil/body/seq/media").Select(c => Extensions.GetAbsolutePathSimple(PlaylistPath, c.Attribute("src").Value));
+				{
+					if (_items == null)
+					{
+						_items = new List<PlayListItem>(Document?.XPathSelectElements("/smil/body/seq/media")
+							.Select(c => new PlayListItem() {
+								Path = c.Attribute("src").Value,
+								AbsolutePath = PlaylistPath.GetAbsolutePathSimple(c.Attribute("src").Value)
+							}));
+					}
+					return _items;
+				}
 			}
 			set
 			{
-				Add(value);
+				_items = value;
 			}
 		}
 
@@ -222,6 +259,6 @@ namespace PlaylistParser.PlayLists
 
 		#endregion
 
-
+		#endregion
 	}
 }

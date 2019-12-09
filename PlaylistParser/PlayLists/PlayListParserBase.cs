@@ -5,13 +5,12 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Linq;
 
-
-namespace PlaylistParser.PlayLists
+namespace PlaylistParser.Playlist
 {
 	public class PlaylistParserBase
 	{
-
 
 		#region Constructor & Parse
 
@@ -19,8 +18,12 @@ namespace PlaylistParser.PlayLists
 		{
 			PlaylistPath = filePath;
 			Name = System.IO.Path.GetFileNameWithoutExtension(filePath);
-
 		}
+
+		//protected PlaylistParserBase()
+		//{
+
+		//}
 
 		protected bool AbsoluteFilePath = false;
 
@@ -60,11 +63,11 @@ namespace PlaylistParser.PlayLists
 		#endregion
 
 
-		#region Properties & Members
+		#region Properties
 
 		public string Name { get; protected set; }
 
-		public string Title { get; protected set; }
+		public virtual string Title { get; protected set; }
 
 		public string PlaylistPath { get; protected set; }
 
@@ -95,9 +98,24 @@ namespace PlaylistParser.PlayLists
 
 		#region SavePlaylist
 
-		//public bool SavePlaylist(string location, bool overwrite = true) => SavePlaylistRaw(location, overwrite);
+		protected void PrepareSavePlaylist()
+		{
 
-		//protected virtual bool SavePlaylistRaw(string location, bool overwrite) => true;
+		}
+
+		#endregion
+
+
+		#region Add
+
+		protected virtual void Add(string uri, string name = null)
+		{
+			string absolutePath = uri;
+			if (!Path.IsPathRooted(absolutePath))
+				absolutePath = Extensions.GetAbsolutePathSimple(PlaylistPath, absolutePath);
+			Items.Add(new PlayListItem() { Path = uri, AbsolutePath = absolutePath });
+		}
+
 
 		#endregion
 
@@ -107,10 +125,9 @@ namespace PlaylistParser.PlayLists
 		public bool Check()
 		{
 			var result = true;
-
 			foreach (var item in Items)
 			{
-				if (!File.Exists(item.Path))
+				if (!CheckPath(item))
 				{
 					result = false;
 					IsNeedRepair = true;
@@ -119,9 +136,38 @@ namespace PlaylistParser.PlayLists
 			return result;
 		}
 
+		private bool CheckPath(PlayListItem item)
+		{
+			var result = File.Exists(item.AbsolutePath);
+			if (result && !Path.IsPathRooted(item.Path))
+			{
+				//var mc = Regex.Matches(item.Path, @"\.\.\\").Count;
+				//var prp = Path.GetDirectoryName(PlaylistPath);
+				//var lc = Regex.Matches(prp, @"\\\S").Count;
+				//result = (mc == lc);
+				result = item.Path.Equals(Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath));
+			}
+			return result;
+		}
+
 		public void Repair()
 		{
+			if (!Check())
+			{
+				var corrupted = Items.Where(item => !CheckPath(item));
 
+				foreach (var item in corrupted)
+				{
+					if (File.Exists(item.AbsolutePath))
+					{
+						item.Path = Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath);
+					}
+				}
+
+				var todelete = Items.Where(item => !CheckPath(item));
+
+				//Items.RemoveAll(item => !CheckPath(item));
+			}
 		}
 
 		#endregion

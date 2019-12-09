@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.IO;
-using PlaylistParser.PlayLists;
+using PlaylistParser.Playlist;
 using System.Windows;
 using System.Windows.Media;
 using System.Runtime.InteropServices;
@@ -20,6 +20,17 @@ namespace PlaylistParser
 	{
 
 		#region File && Folders path
+
+
+		public static void SetAttributesNormal(this DirectoryInfo dir)
+		{
+			foreach (var subDir in dir.GetDirectories())
+				SetAttributesNormal(subDir);
+			foreach (var file in dir.GetFiles())
+			{
+				file.Attributes = FileAttributes.Normal;
+			}
+		}
 
 		public static string SanitizePath(this string path)
 		{
@@ -58,7 +69,7 @@ namespace PlaylistParser
 			return GetAbsolutePath(null, path);
 		}
 
-		public static string GetAbsolutePathSimple(string basePath, string path)
+		public static string GetAbsolutePathSimple(this string basePath, string path)
 		{
 			basePath = Path.GetDirectoryName(basePath);
 
@@ -155,6 +166,56 @@ namespace PlaylistParser
 		#endregion
 
 
+		#region Playlist
+
+		public static IEnumerable<IPlaylist> GetPlayLists(this string folderPath, string regexString)
+		{
+			if (!string.IsNullOrWhiteSpace(folderPath) && File.GetAttributes(folderPath).HasFlag(FileAttributes.Directory))
+			{
+
+				var items = Directory.GetFiles(folderPath)
+					.Where(d => regexString.IsValidRegex() ? Regex.IsMatch(Path.GetFileName(d), regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase) : true);
+
+				foreach (var item in items)
+					yield return PlaylistBase.Create(item);
+			}
+		}
+
+
+		/// <summary>
+		/// Try to get [name] group by using PlsFilter
+		/// </summary>
+		/// <param name="path">Destination folder</param>
+		/// <returns></returns>
+		public static string TryGetFolder(this IPlaylist playlist, string toPath, bool oneFolder)
+		{
+			var result = string.Empty;
+
+			if (!Directory.Exists(toPath))
+				throw new Exception($@"Folder {toPath} don't exist.");
+
+			if (!oneFolder)
+			{
+				var match = Regex.Match(playlist.PlaylistPath, AppSettings.Instance.PlsFilter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+				if (match.Success)
+					result = match.Groups["name"].Value;
+				else
+					result = playlist.Title;
+			}
+
+			result = Path.Combine(toPath, result);
+
+			return result;
+		}
+
+		public static string TryGetFolder(this IPlaylist playlist, string toPath)
+		{
+			return TryGetFolder(playlist, toPath, AppSettings.Instance.UseOneFolder);
+		}
+
+		#endregion
+
 		#region Others
 
 		private static bool IsValidRegex(this string pattern)
@@ -177,19 +238,6 @@ namespace PlaylistParser
 		public static bool ToBoolean(this bool? value)
 		{
 			return value ?? false;
-		}
-
-		public static IEnumerable<PlayList> GetPlayLists(this string folderPath, string regexString)
-		{
-			if (!string.IsNullOrWhiteSpace(folderPath) && File.GetAttributes(folderPath).HasFlag(FileAttributes.Directory))
-			{
-
-				var items = Directory.GetFiles(folderPath)
-					.Where(d => regexString.IsValidRegex() ? Regex.IsMatch(Path.GetFileName(d), regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase) : true);
-
-				foreach (var item in items)
-					yield return new PlayList(item);
-			}
 		}
 
 		public static void ForEach<T>(this IEnumerable<T> enumeration, Action<T> action)

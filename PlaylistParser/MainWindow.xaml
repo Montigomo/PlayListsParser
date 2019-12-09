@@ -4,7 +4,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:PlaylistParser"
-		xmlns:local2="clr-namespace:PlaylistParser.PlayLists"
+		xmlns:local2="clr-namespace:PlaylistParser.Playlist"
     xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" 
     xmlns:SysMenu="clr-namespace:Agitech.Wpf.SysMenu;assembly=Agitech.Wpf.SysMenu" 
     xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock" 

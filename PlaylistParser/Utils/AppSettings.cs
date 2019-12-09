@@ -197,6 +197,7 @@ namespace PlaylistParser
 		[Description("Folder to which will be saved playlist items or other work on them results.")]
 		public string OutputFolder { get; set; }
 
+		#region PlsFilter
 
 		private string _plsFilter;
 
@@ -238,23 +239,33 @@ namespace PlaylistParser
 			}
 		}
 
+		#endregion
+
+		[PropertyOrder(3)]
 		[Category("General")]
 		[Description("Save only one item in output folder.")]
+		[DisplayName("Remove duplicates")]
 		public bool RemoveDuplicates { get; set; }
 
+		[PropertyOrder(4)]
 		[Category("General")]
 		[Description("Clear destination folder.")]
+		[DisplayName("Clear folder")]
 		public bool ClearFolder { get; set; }
 
+		[PropertyOrder(5)]
 		[Category("General")]
 		[Description("Use Task for work on playlists or sequential proccesing.")]
+		[DisplayName("Use Task")]
 		public bool UseTask { get; set; } = true;
 
 
 		private bool _useOneFolder = false;
 
+		[PropertyOrder(6)]
 		[Category("General")]
 		[Description("Use one folder for all playlists result items or different folder for each playlist.")]
+		[DisplayName("Use one folder")]
 		public bool UseOneFolder
 		{
 			get => _useOneFolder;
@@ -263,6 +274,12 @@ namespace PlaylistParser
 				_useOneFolder = value;
 			}
 		}
+
+		[PropertyOrder(7)]
+		[Category("General")]
+		[Description("Folder to which will be saved playlist items or other work on them results.")]
+		[DisplayName("Playlist item path")]
+		public PlaylistItemPath PlaylistItemPathFormat { get; set; }
 
 		#endregion
 
@@ -344,6 +361,12 @@ namespace PlaylistParser
 	{
 		Properties,
 		File
+	}
+
+	public enum PlaylistItemPath
+	{
+		Absolute,
+		Relative
 	}
 
 	#endregion

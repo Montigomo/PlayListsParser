@@ -5,14 +5,14 @@ using System.IO;
 using PlaylistParser;
 
 // ReSharper disable once CheckNamespace
-namespace PlaylistParser.PlayLists
+namespace PlaylistParser.Playlist
 {
-	public class PlaylistParserM3u : PlaylistParserBase, IPlaylistParser
+	public class PlaylistM3u : PlaylistBase, IPlaylist
 	{
 
 		#region Constructor
 
-		public PlaylistParserM3u(string filePath) : base(filePath)
+		public PlaylistM3u(string filePath) : base(filePath)
 		{
 			Parse();
 		}
@@ -23,8 +23,6 @@ namespace PlaylistParser.PlayLists
 
 
 		#region Properties
-
-		//public event ProgressChangedEventHandler ProgressChanged;
 
 
 		#region Items
@@ -39,7 +37,7 @@ namespace PlaylistParser.PlayLists
 
 		#region SavePlaylist
 
-		public void SavePlaylist(string uri = null, bool overwrite = true)
+		public void SavePlaylist(string uri, bool overwrite )
 		{
 			// m3u header
 			string _headerm3u = $"#EXTM3U{Environment.NewLine}#PLAYLIST:{{0}}{Environment.NewLine}";
@@ -64,8 +62,8 @@ namespace PlaylistParser.PlayLists
 			{
 				try
 				{
-					string itemPath = AbsoluteFilePath ? item.Path : Extensions.GetRelativePath(uri, item.Path);
-					string line = String.Format(_linem3u, 0, item.Name, itemPath);
+					string itemPath = AppSettings.Instance.PlaylistItemPathFormat == PlaylistItemPath.Absolute ? item.Path : Extensions.GetRelativePath(uri, item.Path);
+					string line = String.Format(_linem3u, 0, item.FileName, itemPath);
 					sbn.AppendLine(line);
 				}
 				catch (System.IO.FileNotFoundException)
@@ -83,16 +81,6 @@ namespace PlaylistParser.PlayLists
 		#endregion
 
 
-		#region Add
-
-		public void Add(string uri, string name = null)
-		{
-			Items.Add(new PlayListItem() { Path = uri });
-		}
-
-		#endregion
-
-
 		#region Parse
 
 		private void Parse()
@@ -100,38 +88,25 @@ namespace PlaylistParser.PlayLists
 			if (!File.Exists(PlaylistPath))
 				return;
 
-			//Items = new List<PlayListItem>();
-
-			//var playlistFolder = System.IO.Path.GetDirectoryName(FilePath);
-
-			foreach (string filePath in File.ReadAllLines(PlaylistPath, Encoding.GetEncoding(1251)))
+			foreach (string line in File.ReadAllLines(PlaylistPath, Encoding.GetEncoding(1251)))
 			{
-				//try
-				//{
-				if (filePath.StartsWith(@"#EXTM3U"))
+
+				if (line.StartsWith(@"#EXTM3U"))
 				{
 
 				}
-				else if (filePath.StartsWith(@"#EXTINF"))
+				else if (line.StartsWith(@"#EXTINF"))
 				{
 
 				}
-				else if (filePath.StartsWith(@"#PLAYLIST:"))
+				else if (line.StartsWith(@"#PLAYLIST:"))
 				{
 
 				}
-				else if (!String.IsNullOrWhiteSpace(filePath))
+				else if (!String.IsNullOrWhiteSpace(line))
 				{
-					if(Path.IsPathRooted(filePath))
-						Add(filePath);
-					else
-						Add(Extensions.GetAbsolutePathSimple(PlaylistPath, filePath));
+					Add(line);
 				}
-				//}
-				//catch(Exception e)
-				//{
-
-				//}
 			}
 
 			Title = System.IO.Path.GetFileNameWithoutExtension(PlaylistPath);

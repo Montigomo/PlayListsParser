@@ -1,4 +1,4 @@
-﻿using PlaylistParser.PlayLists;
+﻿using PlaylistParser.Playlist;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -47,7 +47,7 @@ namespace PlaylistParser
 			PropertyGridMain.SelectedObject = AppSettings.Instance;
 
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
-			PlayList.PropertyChangedStatic += PlayList_PropertyChangedStatic;
+			PlaylistBase.PropertyChangedLibrary += PlayList_PropertyChangedStatic;
 			RepairToggle();
 		}
 
@@ -55,7 +55,7 @@ namespace PlaylistParser
 		{
 			switch (e.PropertyName)
 			{
-				case nameof(PlayList.IsNeedRepair):
+				case nameof(IPlaylist.IsNeedRepair):
 					RepairToggle();
 					break;
 				default:
@@ -81,11 +81,12 @@ namespace PlaylistParser
 
 		private void RefreshPlaylists()
 		{
-			PlayList.Refresh();
+			PlaylistBase.Refresh();
 			Binding();
 		}
 
 		#endregion
+
 
 		#region Bindings
 
@@ -101,7 +102,7 @@ namespace PlaylistParser
 
 			var dgBinding = new Binding()
 			{
-				Source = PlayList.PlayLists,
+				Source = Library,
 				Mode = BindingMode.OneWay
 			};
 
@@ -127,7 +128,7 @@ namespace PlaylistParser
 
 				DataGridMain.Columns.Add(new DataGridTextColumn()
 				{
-					Binding = new Binding("FilePath") { Mode = BindingMode.OneWay },
+					Binding = new Binding("PlaylistPath") { Mode = BindingMode.OneWay },
 					Header = "Path"
 				});
 
@@ -139,7 +140,7 @@ namespace PlaylistParser
 
 				DataGridMain.Columns.Add(new DataGridCheckBoxColumn()
 				{
-					Binding = new Binding("Repair") { Mode = BindingMode.TwoWay },
+					Binding = new Binding("WillRepair") { Mode = BindingMode.TwoWay },
 					Header = CreateHeader("Repair", "Repair playlist from invalid path items")
 				});
 
@@ -175,11 +176,13 @@ namespace PlaylistParser
 
 		#endregion
 
+
 		#region Properties
 
-		//internal ObservableCollection<PlayList> PlayLists => PlayList.PlayLists;
+		internal ObservableCollection<IPlaylist> Library => PlaylistBase.Playlists;
 
 		#endregion
+
 
 		#region PropertyChanged
 
@@ -240,7 +243,7 @@ namespace PlaylistParser
 				ProgressBarMain.Value = 0;
 				ProgressBarMain.Minimum = 0;
 				ProgressBarMain.Maximum = max;
-				PlayList.ProgressChangedStatic += ProgressChanged;
+				PlaylistBase.ProgressChangedLibrary += ProgressChanged;
 				ProgressBarMain.Visibility = Visibility.Visible;
 			}));
 		}
@@ -312,18 +315,18 @@ namespace PlaylistParser
 
 		#region TEST
 
-		#region Check
+		#region Check && Repair
 
 		private async void Check()
 		{
-			await Task.WhenAll(PlayList.PlayLists.Select(item => item.CheckAsync()));
+			await Task.WhenAll(Library.Select(item => item.CheckAsync()));
 		}
 
 		private void RepairToggle()
 		{
 			this.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
 			{
-				this.menuItemRepare.IsEnabled = PlayList.PlayLists.Any(item => item.IsNeedRepair);
+				this.menuItemRepare.IsEnabled = Library.Any(item => item.IsNeedRepair);
 			}));
 		}
 
@@ -331,9 +334,13 @@ namespace PlaylistParser
 
 		private void Test()
 		{
-			//PlayList.ReapairNeed = true;
-			//PlayList.PlayLists.ForEach(item => item.Check());
+			var playlist = PlaylistBase.Create(@"D:\\music\\Playlists\\A.Ambient.wpl");
+			if(playlist != null)
+			{
+				playlist.Repair();
+			}
 
+			playlist.SavePlaylist();
 		}
 
 		#endregion
@@ -345,46 +352,11 @@ namespace PlaylistParser
 		{
 			ToggleControls(menuItemRun);
 
-			if (AppSettings.Instance.ClearFolder)
-			{
-				DirectoryInfo di = new DirectoryInfo(AppSettings.Instance.OutputFolder);
-
-				foreach (FileInfo file in di.GetFiles())
-				{
-					file.Delete();
-				}
-
-				foreach (DirectoryInfo dir in di.GetDirectories())
-				{
-					SetAttributesNormal(dir);
-					dir.Delete(true);
-				}
-			}
-
-			await PlayList.SavePlaylistsAsync(
-				AppSettings.Instance.OutputFolder,
-				(fn) =>
-				{
-					var result = string.Empty;
-					var match = Regex.Match(fn, AppSettings.Instance.PlsFilter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-					if (match.Success)
-						result = match.Groups["name"].Value;
-					return result;
-				},
-				ProgressBarInit).ContinueWith((v) => ProgressBarHide());
+			await PlaylistBase.SaveItemsAsync(AppSettings.Instance.OutputFolder,ProgressBarInit).ContinueWith((v) => ProgressBarHide());
 
 			ToggleControls(menuItemRun);
 		}
 
-		private void SetAttributesNormal(DirectoryInfo dir)
-		{
-			foreach (var subDir in dir.GetDirectories())
-				SetAttributesNormal(subDir);
-			foreach (var file in dir.GetFiles())
-			{
-				file.Attributes = FileAttributes.Normal;
-			}
-		}
 
 		private void wndMain_Loaded(object sender, RoutedEventArgs e)
 		{
@@ -409,22 +381,24 @@ namespace PlaylistParser
 		{
 			if (sender is DataGridColumnHeader columnHeader)
 			{
-				if (columnHeader.DisplayIndex == 0 && columnHeader.Content.ToString() == "#")
+				string header = (columnHeader.Content as TextBlock)?.Text;
+				if (columnHeader.DisplayIndex == 2 && header == "Extract")
 				{
-					PlayList.PlayLists.ForEach(t => t.Process = !t.Process);
+					Library.ForEach(t => t.Process = !t.Process);
 					//e.Handled = true;
 				}
-				else if (columnHeader.DisplayIndex == 3 && columnHeader.Content.ToString() == "Repair")
+				else if (columnHeader.DisplayIndex == 3 && header == "Repair")
 				{
-					PlayList.PlayLists.ForEach(t => t.Repair = !t.Repair);
-
+					Library.ForEach(t => t.WillRepair = !t.WillRepair);
+					//e.Handled = true;
 				}
 			}
 		}
 		private void DataGridMain_Sorting(object sender, DataGridSortingEventArgs e)
 		{
-			if ((e.Column.DisplayIndex == 0 && e.Column.Header.Equals("#"))
-				 || (e.Column.DisplayIndex == 3 && e.Column.Header.Equals("Repair")))
+			string header = (e.Column.Header as TextBlock)?.Text;
+			if ((e.Column.DisplayIndex == 2 && header.Equals("Extract"))
+				 || (e.Column.DisplayIndex == 3 && header.Equals("Repair")))
 			{
 				//PlayLists.ForEach(t => t.Prepare = !t.Prepare);
 				e.Handled = true;
@@ -453,11 +427,7 @@ namespace PlaylistParser
 
 		private void MainMenu_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
 		{
-			//PlayLists.ForEach(t => t.Prepare = !t.Prepare);
 
-			//PlayLists.RemoveAt(PlayLists.Count - 1);
-
-			//PlayLists.Add(new PlayList(PlayLists[PlayLists.Count - 1].FilePath));
 		}
 
 		private void menuItemDgRefresh_Click(object sender, RoutedEventArgs e)
