@@ -29,7 +29,7 @@ namespace PlaylistParser
 		public override void WriteLine(string value)
 		{
 			base.WriteLine(value + Environment.NewLine);
-			_output.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => _output.AppendText(value + Environment.NewLine)));
+			_output.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(() => _output.AppendText(value + Environment.NewLine)));
 
 		}
 

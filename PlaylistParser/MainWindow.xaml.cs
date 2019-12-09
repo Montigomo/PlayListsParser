@@ -228,7 +228,7 @@ namespace PlaylistParser
 
 		private void ProgressChanged(object sender, ProgressChangedEventArgs e)
 		{
-			Application.Current?.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
+			this.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(() =>
 			{
 				if (ProgressBarMain != null)
 					ProgressBarMain.Value = e.ProgressPercentage;
@@ -237,7 +237,7 @@ namespace PlaylistParser
 
 		private void ProgressBarInit(int max)
 		{
-			Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
+			this.Dispatcher.Invoke(DispatcherPriority.Send, new Action(() =>
 			{
 				Console.WriteLine(@"Init progress bar.");
 				ProgressBarMain.Value = 0;
@@ -250,7 +250,7 @@ namespace PlaylistParser
 
 		private void ProgressBarHide()
 		{
-			this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
+			this.Dispatcher.Invoke(DispatcherPriority.Normal, new Action(() =>
 			{
 				if (ProgressBarMain != null)
 					ProgressBarMain.Visibility = Visibility.Hidden;
@@ -334,13 +334,14 @@ namespace PlaylistParser
 
 		private void Test()
 		{
-			var playlist = PlaylistBase.Create(@"D:\\music\\Playlists\\A.Ambient.wpl");
-			if(playlist != null)
-			{
-				playlist.Repair();
-			}
+			//var playlist = PlaylistBase.Create(@"D:\\music\\Playlists\\A.Ambient.wpl");
+			//if(playlist != null)
+			//{
+			//	playlist.Repair();
+			//}
 
-			playlist.SavePlaylist();
+			//playlist.SavePlaylist();
+			ProgressChanged(null, new ProgressChangedEventArgs((int)ProgressBarMain.Value + 10, null));
 		}
 
 		#endregion

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.ComponentModel;
@@ -50,11 +51,38 @@ namespace PlaylistParser.Playlist
 
 		public static Task SaveItemsAsync(string outFolder, Action<int> pbInit)
 		{
-			return Task.Run(() => SaveItems(outFolder, pbInit));
+			//var tsc = new TaskCompletionSource<bool>();
+			//var cts = new CancellationTokenSource();
+			////Task.Factory.StartNew(() =>
+			////{
+			////	SaveItems(outFolder, pbInit);
+			////	tsc.SetResult(true);
+			////});
+			//new Thread(() =>
+			//{
+			//	SaveItems(outFolder, pbInit);
+			//	tsc.SetResult(true);
+			//}).Start();
+			//return tsc.Task;
+
+			//return Task.Run(() => SaveItems(outFolder, pbInit));
+
+			return Task.Factory.StartNew(
+				() => SaveItems(outFolder, pbInit),
+				CancellationToken.None, 
+				TaskCreationOptions.LongRunning,
+				TaskScheduler.Default);
 		}
 
 		private static void SaveItems(string outFolder, Action<int> pbInit)
 		{
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+
+			var workedPlaylists = Playlists.Where(p => p.Process).ToList();
+
+			var count = workedPlaylists.Aggregate(0, (result, element) => result + element.Items.Count);
+
+			pbInit(count);
 
 			if (AppSettings.Instance.ClearFolder)
 			{
@@ -72,13 +100,15 @@ namespace PlaylistParser.Playlist
 				}
 			}
 
-			var watch = System.Diagnostics.Stopwatch.StartNew();
 
-			var workedPlaylists = Playlists.Where(p => p.Process).ToList();
 
-			var count = workedPlaylists.Aggregate(0, (result, element) => result + element.Items.Count);
+			//Thread.Sleep(3000);
 
-			pbInit(count);
+			//_pbProgress = 100;
+			
+			//NotifyProgressChangedEvent(null);
+
+			//Thread.Sleep(60000);
 
 			if (AppSettings.Instance.UseTask)
 				Task.WaitAll(workedPlaylists.Select(t => t.SaveItemsAsync(t.TryGetFolder(outFolder))).ToArray());
@@ -307,7 +337,7 @@ namespace PlaylistParser.Playlist
 
 		private static int _pbProgress = 0;
 
-		private void NotifyProgressChangedEvent(object sender, ProgressChangedEventArgs e = null)
+		private static void NotifyProgressChangedEvent(object sender, ProgressChangedEventArgs e = null)
 		{
 			_pbProgress += 1;
 
