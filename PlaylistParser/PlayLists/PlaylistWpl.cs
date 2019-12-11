@@ -260,5 +260,6 @@ namespace PlaylistParser.Playlist
 		#endregion
 
 		#endregion
+
 	}
 }

@@ -11,8 +11,37 @@ using System.Text.RegularExpressions;
 
 namespace PlaylistParser.Playlist
 {
-	public class PlaylistBase : INotifyPropertyChanged
+	public class PlaylistBase : INotifyPropertyChanged, IDisposable
 	{
+		#region IDisposable
+
+		bool _disposed = false;
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (_disposed)
+				return;
+
+			if(disposing)
+			{
+
+			}
+
+			Cts.Dispose();
+		}
+
+		~PlaylistBase()
+		{
+			Dispose(false);
+		}
+
+		#endregion
 
 		#region Library
 
@@ -49,29 +78,46 @@ namespace PlaylistParser.Playlist
 			}
 		}
 
+		private static CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
+
+		public static void Cancel()
+		{
+			Cts.Cancel();
+		}
+
 		public static Task SaveItemsAsync(string outFolder, Action<int> pbInit)
 		{
-			//var tsc = new TaskCompletionSource<bool>();
+			var tsc = new TaskCompletionSource<bool>();
+
+			if(Cts.Token.IsCancellationRequested)
+			{
+				Cts.Dispose();
+				Cts = new CancellationTokenSource();
+			}
+
 			//var cts = new CancellationTokenSource();
-			////Task.Factory.StartNew(() =>
-			////{
-			////	SaveItems(outFolder, pbInit);
-			////	tsc.SetResult(true);
-			////});
-			//new Thread(() =>
+
+			//Task.Factory.StartNew(() =>
 			//{
 			//	SaveItems(outFolder, pbInit);
 			//	tsc.SetResult(true);
-			//}).Start();
-			//return tsc.Task;
+			//});
+
+			new Thread(() =>
+			{
+				SaveItems(outFolder, pbInit);
+				tsc.SetResult(true);
+			}).Start();
+
+			return tsc.Task;
 
 			//return Task.Run(() => SaveItems(outFolder, pbInit));
 
-			return Task.Factory.StartNew(
-				() => SaveItems(outFolder, pbInit),
-				CancellationToken.None, 
-				TaskCreationOptions.LongRunning,
-				TaskScheduler.Default);
+			//return Task.Factory.StartNew(
+			//	() => SaveItems(outFolder, pbInit),
+			//	CancellationToken.None, 
+			//	TaskCreationOptions.LongRunning,
+			//	TaskScheduler.Default);
 		}
 
 		private static void SaveItems(string outFolder, Action<int> pbInit)
@@ -90,25 +136,19 @@ namespace PlaylistParser.Playlist
 
 				foreach (FileInfo file in di.GetFiles())
 				{
+					if (Cts.Token.IsCancellationRequested)
+						return;
 					file.Delete();
 				}
 
 				foreach (DirectoryInfo dir in di.GetDirectories())
 				{
+					if (Cts.Token.IsCancellationRequested)
+						return;
 					dir.SetAttributesNormal();
 					dir.Delete(true);
 				}
 			}
-
-
-
-			//Thread.Sleep(3000);
-
-			//_pbProgress = 100;
-			
-			//NotifyProgressChangedEvent(null);
-
-			//Thread.Sleep(60000);
 
 			if (AppSettings.Instance.UseTask)
 				Task.WaitAll(workedPlaylists.Select(t => t.SaveItemsAsync(t.TryGetFolder(outFolder))).ToArray());
@@ -412,10 +452,12 @@ namespace PlaylistParser.Playlist
 		/// <returns></returns>
 		public bool SaveItems(string folderPath)
 		{
-			//var totalCount = Items.Count;
 
 			foreach (var item in Items)
 			{
+				if (Cts.Token.IsCancellationRequested)
+					return false;
+
 				var fileName = System.IO.Path.GetFileName(item.Path);
 
 				var filePathDest = System.IO.Path.GetFullPath(folderPath + "\\" + fileName);
@@ -424,7 +466,7 @@ namespace PlaylistParser.Playlist
 
 				try
 				{
-					var tagVar = TagLib.File.Create(item.Path);
+					var tagVar = TagLib.File.Create(item.AbsolutePath);
 					var artist = String.Join(", ", tagVar.Tag.Performers);
 					var title = tagVar.Tag.Title;
 
@@ -436,28 +478,21 @@ namespace PlaylistParser.Playlist
 
 						filePathDest = System.IO.Path.GetFullPath(folderPath + "\\" + fileName + fileExtension);
 					}
-				}
-				catch (Exception e)
-				{
-					Console.WriteLine($@"{Name} - {e.Message}");
-				}
 
-				Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filePathDest) ?? throw new InvalidOperationException());
+					Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filePathDest) ?? throw new InvalidOperationException());
 
-				if (File.Exists(filePathDest))
-					RemoveReadOnlyAttribute(filePathDest);
+					if (File.Exists(filePathDest))
+						RemoveReadOnlyAttribute(filePathDest);
 
-				try
-				{
-					File.Copy(item.Path, filePathDest, true);
+					File.Copy(item.AbsolutePath, filePathDest, true);
 				}
 				catch (System.IO.DirectoryNotFoundException e)
 				{
-					//Console.WriteLine($@"{Name} - {e.Message}");
+					Console.WriteLine($@"{Name} - {e.Message}");
 				}
 				catch (System.IO.FileNotFoundException e)
 				{
-					//Console.WriteLine($@"{Name} - {e.Message}");
+					Console.WriteLine($@"{Name} - {e.Message}");
 				}
 				catch (System.IO.IOException ex) when (ex.HResult == unchecked((int)0x80070020) && AppSettings.Instance.UseTask)
 				{
@@ -478,7 +513,7 @@ namespace PlaylistParser.Playlist
 		public Task<bool> SaveItemsAsync(string folderPath)
 		{
 			//return Task.Run(() => SaveItems(folderPath));
-			return Task.Factory.StartNew(() =>  SaveItems(folderPath) , TaskCreationOptions.LongRunning);
+			return Task.Factory.StartNew(() => SaveItems(folderPath), TaskCreationOptions.LongRunning);
 		}
 
 		//private Task SaveItemsAsync(string outFolder)

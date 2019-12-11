@@ -165,14 +165,17 @@ namespace PlaylistParser
 
 		#endregion
 
+		#region Events
+
 		private static void App_Exit(object sender, ExitEventArgs e)
 		{
 			if (_instance != null)
 				Instance.Save();
 		}
 
-		#region Values
+		#endregion
 
+		#region Values
 
 		private string _playListsFolder = String.Empty;
 

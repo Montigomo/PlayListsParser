@@ -273,13 +273,16 @@ namespace PlaylistParser
 			{
 				if (!excludeControls.Contains(control))
 					control.IsEnabled = !control.IsEnabled;
-				string[] tcarray = control.Tag.ToString().Split('|');
-				if (tcarray.Length > 1)
+				else
 				{
-					string header = control.GetDependencyPropertyValue("Header", control) as string;
-					if (header != null)
+					string[] tcarray = control.Tag.ToString().Split('|');
+					if (tcarray.Length > 1)
 					{
-						control.SetDependencyPropertyValue("Header", header == tcarray[1] ? tcarray[2] : tcarray[1]);
+						string header = control.GetDependencyPropertyValue("Header", control) as string;
+						if (header != null)
+						{
+							control.SetDependencyPropertyValue("Header", header == tcarray[1] ? tcarray[2] : tcarray[1]);
+						}
 					}
 				}
 			}
@@ -315,23 +318,6 @@ namespace PlaylistParser
 
 		#region TEST
 
-		#region Check && Repair
-
-		private async void Check()
-		{
-			await Task.WhenAll(Library.Select(item => item.CheckAsync()));
-		}
-
-		private void RepairToggle()
-		{
-			this.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
-			{
-				this.menuItemRepare.IsEnabled = Library.Any(item => item.IsNeedRepair);
-			}));
-		}
-
-		#endregion
-
 		private void Test()
 		{
 			//var playlist = PlaylistBase.Create(@"D:\\music\\Playlists\\A.Ambient.wpl");
@@ -347,15 +333,41 @@ namespace PlaylistParser
 		#endregion
 
 
+		#region Check && Repair
+
+		private async void Check()
+		{
+			ToggleControls(menuItemCheck);
+
+			await Task.WhenAll(Library.Select(item => item.CheckAsync()));
+
+			ToggleControls(menuItemCheck);
+		}
+
+		private void RepairToggle()
+		{
+			this.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+			{
+				this.menuItemRepare.IsEnabled = Library.Any(item => item.IsNeedRepair);
+			}));
+		}
+
+		#endregion
+
 		#region Events
 
-		private async void RunPlayListItemsSaveAsync(bool cancel = false)
+		private async void RunPlayListItemsSaveAsync()
 		{
 			ToggleControls(menuItemRun);
 
 			await PlaylistBase.SaveItemsAsync(AppSettings.Instance.OutputFolder,ProgressBarInit).ContinueWith((v) => ProgressBarHide());
 
 			ToggleControls(menuItemRun);
+		}
+
+		private void Cancel()
+		{
+			PlaylistBase.Cancel();
 		}
 
 
@@ -414,7 +426,7 @@ namespace PlaylistParser
 			}
 			else if (menuItemRun.Header.ToString() == "Cancel")
 			{
-				RunPlayListItemsSaveAsync(true);
+				Cancel();
 			}
 		}
 
