@@ -22,11 +22,6 @@ namespace PlaylistParser.Playlist
 			Parse();
 		}
 
-		//private PlaylistParserWpl(): base()
-		//{
-
-		//}
-
 		#endregion
 
 
@@ -38,14 +33,35 @@ namespace PlaylistParser.Playlist
 
 		#region SavePlaylist
 
-		public void SavePlaylist(string uri , bool overwrite)
+		public void SavePlaylist(bool overwrite)
 		{
-			uri = uri ?? PlaylistPath;
+			if (String.IsNullOrWhiteSpace(PlaylistPath))
+				throw new ArgumentNullException(nameof(PlaylistPath));
 
-			if (String.IsNullOrWhiteSpace(uri))
-				throw new ArgumentNullException("uri");
+			var uriNew = NewPath;
 
-			Save(uri, overwrite);
+			XmlWriterSettings xws = new XmlWriterSettings
+			{
+				OmitXmlDeclaration = true,
+				Indent = true
+			};
+
+			ActualizeXItems(AppSettings.Instance.PlaylistItemPathFormat == PlaylistItemPath.Absolute);
+
+			try
+			{
+				using (var xw = XmlWriter.Create(uriNew, xws))
+				{
+					Document.Save(xw);
+				}
+			}
+			catch
+			{
+				File.Delete(uriNew);
+				throw;
+			}
+			File.Copy(uriNew, PlaylistPath, true);
+			File.Delete(uriNew);
 		}
 
 		#endregion
@@ -56,22 +72,22 @@ namespace PlaylistParser.Playlist
 		public void Parse()
 		{
 			Document = LoadXDoc(PlaylistPath);
+			ActualizeItems();
 			return;
+		}
+
+		private void ActualizeItems()
+		{
+			Items = new List<PlaylistItem>();
+			var setx = Document?.XPathSelectElements("/smil/body/seq/media").Select(c => c.Attribute("src").Value);
+			foreach (var item in setx)
+				Add(item);
 		}
 
 		#endregion
 
-		#region Wpl realization
 
-		/// <summary>
-		/// Constructor with multi action depands on its parameters
-		/// </summary>
-		/// <param name="uri"></param>
-		/// <param name="items"></param>
-		/// Case 1 - uri is folder, items = null, action - scan all files in folder and add its to new play list
-		/// Case 2 - uri is existing playlist, items = null, action - read existing playlist(uri)
-		/// Case 3 - uri is existing playlist, items = null, action - create playlist(uri) and then overwrite it
-		/// Case 4 - uri is file path (exists or not), items != null, action -  create new playlist and add to it all items
+		#region Static methods
 
 		public static PlaylistWpl Load(string uri)
 		{
@@ -109,27 +125,61 @@ namespace PlaylistParser.Playlist
 					)
 				)
 			);
-			Add(xdoc, items);
+			if (items != null && items.Count() > 0)
+			{
+				AddXBody(xdoc);
+				SetXItems(xdoc, items);
+			}
 			return xdoc;
 		}
 
-		private static void Add(XDocument xdoc, IEnumerable<string> items)
+		private static void AddXBody(XDocument xdoc)
 		{
+			xdoc.XPathSelectElement("/smil")?.Add(new XElement("body"));
+		}
 
+		private static void AddXItems(XDocument xdoc, IEnumerable<string> items)
+		{
 			if (items != null && items.Count() > 0)
 			{
-				xdoc.XPathSelectElement("/smil").Add(
-					new XElement("body",
-						new XElement("seq", items.Select(f => new XElement("media", new XAttribute("src", f))))
-					)
-				);
+				xdoc.XPathSelectElement("/smil/body")?.Add(new XElement("seq", ItemsToMedia(items)));
 			}
 		}
 
-		private void Add(IEnumerable<string> items)
+		private static void SetXItems(XDocument xdoc, IEnumerable<string> items)
 		{
-			Add(Document, items);
+			if (items != null && items.Count() > 0)
+			{
+				xdoc.XPathSelectElement("/smil/body")?.ReplaceNodes(new XElement("seq", ItemsToMedia(items)));
+			}
 		}
+
+		private static XElement ItemsToSeq(IEnumerable<string> items)
+		{
+			return new XElement("seq", ItemsToMedia(items));
+		}
+
+		private static IEnumerable<XElement> ItemsToMedia(IEnumerable<string> items)
+		{
+			return items.Select(f => new XElement("media", new XAttribute("src", f)));
+		}
+
+		#endregion
+
+
+		#region Add && Actualize
+
+		private void AddX(IEnumerable<string> items)
+		{
+			AddXItems(Document, items);
+		}
+
+		private void ActualizeXItems(bool absolute)
+		{
+			SetXItems(Document, Items.Select(item => absolute ? item.AbsolutePath : item.RelativePath));
+		}
+
+		#endregion
 
 
 		#region Properties & Members
@@ -160,55 +210,30 @@ namespace PlaylistParser.Playlist
 
 		#region Items
 
-		private List<PlayListItem> _items;
+		//private List<PlaylistItem> _items;
 
-		public override List<PlayListItem> Items
-		{
-			get
-			{
-				{
-					if (_items == null)
-					{
-						_items = new List<PlayListItem>(Document?.XPathSelectElements("/smil/body/seq/media")
-							.Select(c => new PlayListItem() {
-								Path = c.Attribute("src").Value,
-								AbsolutePath = PlaylistPath.GetAbsolutePathSimple(c.Attribute("src").Value)
-							}));
-					}
-					return _items;
-				}
-			}
-			set
-			{
-				_items = value;
-			}
-		}
-
-		#endregion
-
-
-		#region Save
-
-		public void Save(string uri = null, bool overwrite = false)
-		{
-			uri = uri ?? PlaylistPath;
-
-			if (uri == null)
-				throw new ArgumentNullException($@"{MethodBase.GetCurrentMethod().Name} path can't be null.");
-
-			XmlWriterSettings xws = new XmlWriterSettings
-			{
-				OmitXmlDeclaration = true,
-				Indent = true
-			};
-			using (XmlWriter xw = XmlWriter.Create(uri, xws))
-				Document.Save(xw);
-		}
-
-		#endregion
-
-
-		#region Create Playlist
+		//public override List<PlaylistItem> Items
+		//{
+		//	get
+		//	{
+		//		{
+		//			if (_items == null)
+		//			{
+		//				_items = new List<PlaylistItem>(Document?.XPathSelectElements("/smil/body/seq/media")
+		//					.Select(c => new PlaylistItem()
+		//					{
+		//						Path = c.Attribute("src").Value,
+		//						AbsolutePath = PlaylistPath.GetAbsolutePath(c.Attribute("src").Value)
+		//					}));
+		//			}
+		//			return _items;
+		//		}
+		//	}
+		//	set
+		//	{
+		//		_items = value;
+		//	}
+		//}
 
 		#endregion
 
@@ -256,8 +281,6 @@ namespace PlaylistParser.Playlist
 
 			return files;
 		}
-
-		#endregion
 
 		#endregion
 

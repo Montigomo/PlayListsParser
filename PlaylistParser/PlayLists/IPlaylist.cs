@@ -14,21 +14,21 @@ namespace PlaylistParser.Playlist
 		/// </summary>
 		/// <param name="uri"></param>
 		/// <param name="overwrite"></param>
-		void SavePlaylist(string uri = null, bool overwrite = false);
+		void SavePlaylist(bool overwrite = false);
 
 		/// <summary>
 		/// Save playlist items to the folderPath
 		/// </summary>
 		/// <param name="folderPath"></param>
 		/// <returns></returns>
-		bool SaveItems(string folderPath);
+		bool SaveItems(string folderPath, Action<int> progressInit = null);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="folderPath"></param>
 		/// <returns></returns>
-		Task<bool> SaveItemsAsync(string folderPath);
+		Task<bool> SaveItemsAsync(string folderPath, Action<int> progressInit = null);
 
 		/// <summary>
 		/// 
@@ -47,7 +47,7 @@ namespace PlaylistParser.Playlist
 		/// <returns></returns>
 		Task CheckAsync();
 
-		List<PlayListItem> Items { get; set; }
+		List<PlaylistItem> Items { get; set; }
 
 		string PlaylistPath { get; }
 

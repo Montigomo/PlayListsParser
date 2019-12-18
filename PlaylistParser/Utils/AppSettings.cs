@@ -25,9 +25,10 @@ namespace PlaylistParser
 	[Description("Settings")]
 	public class AppSettings : INotifyPropertyChanged
 	{
-		//static unsafe ref T Null<T>() where T : unmanaged => ref *(T*)null;
 
 		#region Instance
+
+		//static unsafe ref T Null<T>() where T : unmanaged => ref *(T*)null;
 
 		private static SettingStore Store { get; set; } = SettingStore.File;
 
@@ -177,6 +178,10 @@ namespace PlaylistParser
 
 		#region Values
 
+		[XmlIgnore]
+		[Browsable(false)]
+		public bool Debug { get; private set; } = false;
+		
 		private string _playListsFolder = String.Empty;
 
 		[Category("General")]

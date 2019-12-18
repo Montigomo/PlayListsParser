@@ -33,6 +33,7 @@
 			</MenuItem>
 			<MenuItem Header="Tools" Tag="toggle">
 				<MenuItem x:Name="menuItemRepare" Header="Repair" Height="22" Tag="toggle" Click="menuItemRepare_Click"/>
+				<MenuItem x:Name="menuItemReparePreview" Header="RepairPreview" Height="22" Tag="toggle" Click="menuItemReparePreview_Click" />
 				<MenuItem x:Name="menuItemCheck" Header="Check" Height="22" Tag="toggle" Click="menuItemCheck_Click" />
 			</MenuItem>
 			<MenuItem Header="Test" Click="_testMenuItem_Click"  Tag="t__oggle" />

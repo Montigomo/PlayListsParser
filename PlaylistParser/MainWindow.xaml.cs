@@ -316,23 +316,6 @@ namespace PlaylistParser
 		#endregion
 
 
-		#region TEST
-
-		private void Test()
-		{
-			//var playlist = PlaylistBase.Create(@"D:\\music\\Playlists\\A.Ambient.wpl");
-			//if(playlist != null)
-			//{
-			//	playlist.Repair();
-			//}
-
-			//playlist.SavePlaylist();
-			ProgressChanged(null, new ProgressChangedEventArgs((int)ProgressBarMain.Value + 10, null));
-		}
-
-		#endregion
-
-
 		#region Check && Repair
 
 		private async void Check()
@@ -349,10 +332,47 @@ namespace PlaylistParser
 			this.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
 			{
 				this.menuItemRepare.IsEnabled = Library.Any(item => item.IsNeedRepair);
+				this.menuItemReparePreview.IsEnabled = Library.Any(item => item.IsNeedRepair);
 			}));
 		}
 
 		#endregion
+
+
+		#region TEST
+
+		private void Test()
+		{
+			var s10 = @"D:\music\Playlists\A.Ambient.wpl";
+			var s11 = @"D:\music\Playlists\A.Pop.m3u";
+			var s12 = @"..\..\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
+			var s13 = @"D:\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
+
+			var s21 = s11.GetAbsolutePath(s12);
+			var s22 = s11.GetAbsolutePath(s13);
+
+			var s31 = s11.GetRelativePath(s12);
+			var s32 = s11.GetRelativePath(s13);
+
+
+			var playlist0 = PlaylistBase.Create(s11);
+			//var playlist1 = Library.FirstOrDefault(item => item.Title == "A.Pop");
+
+			//var s0 = Path.GetPathRoot(playlist0.PlaylistPath);
+			//var s1 = Path.GetPathRoot(playlist1.PlaylistPath);
+
+			//var t0 = playlist0.Check();
+			
+			var t1 = playlist0.Check();
+
+			playlist0.Repair();
+			playlist0.SavePlaylist();
+
+			t1 = playlist0.Check();
+		}
+
+		#endregion
+
 
 		#region Events
 
@@ -360,7 +380,7 @@ namespace PlaylistParser
 		{
 			ToggleControls(menuItemRun);
 
-			await PlaylistBase.SaveItemsAsync(AppSettings.Instance.OutputFolder,ProgressBarInit).ContinueWith((v) => ProgressBarHide());
+			await PlaylistBase.SaveAllItemsAsync(AppSettings.Instance.OutputFolder,ProgressBarInit).ContinueWith((v) => ProgressBarHide());
 
 			ToggleControls(menuItemRun);
 		}
@@ -450,7 +470,7 @@ namespace PlaylistParser
 
 		private void menuItemRepare_Click(object sender, RoutedEventArgs e)
 		{
-
+			PlaylistBase.RepairAll();
 		}
 
 		private void menuItemAdd_Click(object sender, RoutedEventArgs e)
@@ -461,6 +481,11 @@ namespace PlaylistParser
 		private void menuItemCheck_Click(object sender, RoutedEventArgs e)
 		{
 			Check();
+		}
+
+		private void menuItemReparePreview_Click(object sender, RoutedEventArgs e)
+		{
+			PlaylistBase.RepairAll(false);
 		}
 	}
 

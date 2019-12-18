@@ -8,11 +8,13 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using PlaylistParser;
 
 namespace PlaylistParser.Playlist
 {
 	public class PlaylistBase : INotifyPropertyChanged, IDisposable
 	{
+
 		#region IDisposable
 
 		bool _disposed = false;
@@ -43,19 +45,13 @@ namespace PlaylistParser.Playlist
 
 		#endregion
 
+
 		#region Library
 
 		static PlaylistBase()
 		{
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
 
-		}
-
-		public static void Refresh()
-		{
-			if (_playLists != null)
-				_playLists.Clear();
-			_playLists = new ObservableCollection<IPlaylist>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.PlsFilter));
 		}
 
 		private static void SettingsPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -78,20 +74,21 @@ namespace PlaylistParser.Playlist
 			}
 		}
 
-		private static CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
+		#region SaveAllItems
 
-		public static void Cancel()
-		{
-			Cts.Cancel();
-		}
-
-		public static Task SaveItemsAsync(string outFolder, Action<int> pbInit)
+		public static Task SaveAllItemsAsync(string outFolder, Action<int> pbInit)
 		{
 			var tsc = new TaskCompletionSource<bool>();
-
-			if(Cts.Token.IsCancellationRequested)
+			try
 			{
-				Cts.Dispose();
+				if (Cts.Token.IsCancellationRequested)
+				{
+					Cts.Dispose();
+					Cts = new CancellationTokenSource();
+				}
+			}
+			catch(ObjectDisposedException)
+			{
 				Cts = new CancellationTokenSource();
 			}
 
@@ -105,7 +102,7 @@ namespace PlaylistParser.Playlist
 
 			new Thread(() =>
 			{
-				SaveItems(outFolder, pbInit);
+				SaveAllItems(outFolder, pbInit);
 				tsc.SetResult(true);
 			}).Start();
 
@@ -120,7 +117,7 @@ namespace PlaylistParser.Playlist
 			//	TaskScheduler.Default);
 		}
 
-		private static void SaveItems(string outFolder, Action<int> pbInit)
+		private static void SaveAllItems(string outFolder, Action<int> pbInit)
 		{
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -128,7 +125,8 @@ namespace PlaylistParser.Playlist
 
 			var count = workedPlaylists.Aggregate(0, (result, element) => result + element.Items.Count);
 
-			pbInit(count);
+			if(pbInit != null)
+				pbInit(count);
 
 			if (AppSettings.Instance.ClearFolder)
 			{
@@ -162,26 +160,21 @@ namespace PlaylistParser.Playlist
 			_pbProgress = 0;
 		}
 
-
-		public static void CheckAll()
-		{
-			Playlists.Select(item => item.Check());
-		}
-
-		#region Library events
-
-		public static event ProgressChangedEventHandler ProgressChangedLibrary;
-
-
-		public static event PropertyChangedEventHandler PropertyChangedLibrary;
-
-
-		private void NotifyPropertyChangedStatic([CallerMemberName] String propertyName = "")
-		{
-			PropertyChangedLibrary?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-		}
-
 		#endregion
+
+		public static void Refresh()
+		{
+			if (_playLists != null)
+				_playLists.Clear();
+			_playLists = new ObservableCollection<IPlaylist>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.PlsFilter));
+		}
+
+		private static CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
+
+		public static void Cancel()
+		{
+			Cts.Cancel();
+		}
 
 		#endregion
 
@@ -194,7 +187,7 @@ namespace PlaylistParser.Playlist
 
 		public virtual string PlaylistPath { get; protected set; }
 
-		public virtual List<PlayListItem> Items { get; set; }
+		public virtual List<PlaylistItem> Items { get; set; }
 
 		private bool _process = true;
 
@@ -239,6 +232,7 @@ namespace PlaylistParser.Playlist
 			{
 				_isNeedRepair = value;
 				NotifyPropertyChanged();
+				NotifyPropertyChangedLibrary();
 			}
 		}
 
@@ -251,10 +245,9 @@ namespace PlaylistParser.Playlist
 
 		protected virtual void Add(string uri, string name = null)
 		{
-			string absolutePath = uri;
-			if (!Path.IsPathRooted(absolutePath))
-				absolutePath = Extensions.GetAbsolutePathSimple(PlaylistPath, absolutePath);
-			Items.Add(new PlayListItem() { Path = uri, AbsolutePath = absolutePath });
+			var item = new PlaylistItem(uri);
+			ActualizePathes(item);
+			Items.Add(item);
 		}
 
 		#endregion
@@ -273,6 +266,19 @@ namespace PlaylistParser.Playlist
 
 		#region Check && Repair
 
+		public static void CheckAll()
+		{
+			Playlists.Select(item => item.Check());
+		}
+
+		public static void RepairAll(bool save = true)
+		{
+			//Playlists.AsParallel().ForAll(item => item.Repair());
+			Playlists.ForEach(item => item.Repair());
+			if(save)
+				Playlists.ForEach(item => item.SavePlaylist());
+		}
+
 		public Task CheckAsync()
 		{
 			return Task.Factory.StartNew(() =>
@@ -286,17 +292,18 @@ namespace PlaylistParser.Playlist
 		{
 			var result = true;
 			foreach (var item in Items)
-			{
 				if (!CheckPath(item))
-				{
 					result = false;
-					IsNeedRepair = true;
-				}
-			}
+			IsNeedRepair = !result;
 			return result;
 		}
 
-		private bool CheckPath(PlayListItem item)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="item"></param>
+		/// <returns>true if valid false if not valid</returns>
+		private bool CheckPath(PlaylistItem item)
 		{
 			var result = File.Exists(item.AbsolutePath);
 			if (result && !Path.IsPathRooted(item.Path))
@@ -305,16 +312,21 @@ namespace PlaylistParser.Playlist
 				//var prp = Path.GetDirectoryName(PlaylistPath);
 				//var lc = Regex.Matches(prp, @"\\\S").Count;
 				//result = (mc == lc);
-				result = item.Path.Equals(Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath));
+				var t = Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath);
+				result = item.Path.Equals(t);
 			}
 			return result;
 		}
 
 		public void Repair()
 		{
+			int cc = 0, dc = 0;
+
 			if (!Check())
 			{
 				var corrupted = Items.Where(item => !CheckPath(item));
+				
+				cc = corrupted.Count();
 
 				foreach (var item in corrupted)
 				{
@@ -325,12 +337,42 @@ namespace PlaylistParser.Playlist
 				}
 
 				var todelete = Items.Where(item => !CheckPath(item));
+				
+				dc = todelete.Count();
+				
+				//if (!AppSettings.Instance.Debug)
+					Items.RemoveAll(item => !CheckPath(item));
 
-				//Items.RemoveAll(item => !CheckPath(item));
+				Console.WriteLine($@"Playlist {Title} repaired - {cc} removed - {dc}");
+
 			}
 		}
 
 		#endregion
+
+		protected void ActualizePathes(PlaylistItem item, string prevPath = null)
+		{
+			item.AbsolutePath = PlaylistPath.GetAbsolutePath(item.Path);
+			item.RelativePath = PlaylistPath.GetRelativePath(item.AbsolutePath);
+		}
+
+		protected void ActualizePathesAll(string previousPath = null)
+		{
+			foreach(var item in Items)
+			{
+				ActualizePathes(item);
+			}
+		}
+
+
+		protected virtual string NewPath
+		{
+			get
+			{
+				var uriNew = $@"{Path.GetDirectoryName(PlaylistPath)}\{Path.GetFileNameWithoutExtension(PlaylistPath)}.new{Path.GetExtension(PlaylistPath)}";
+				return uriNew;
+			}
+		}
 
 		#endregion
 
@@ -365,6 +407,20 @@ namespace PlaylistParser.Playlist
 
 		private void Initialize(string filePath)
 		{
+			//try
+			//{
+			//	var rexs = @"^(?<root>[^\:]+\:)\\{2,}";
+			//	if(Regex.IsMatch(filePath, rexs))
+			//	{
+			//		var match = Regex.Match(filePath, rexs);
+			//		var roots = match.Groups["root"]?.Value;
+			//		if(!String.IsNullOrWhiteSpace(roots))
+			//		{
+			//			filePath = Regex.Replace(filePath, rexs, roots + @"\");
+			//		}
+			//	}
+			//}
+			//catch { }
 			PlaylistPath = filePath;
 		}
 
@@ -373,17 +429,39 @@ namespace PlaylistParser.Playlist
 
 		#region Events
 
-		public event ProgressChangedEventHandler ProgressChanged;
+		#region Library events
 
+		public static event PropertyChangedEventHandler PropertyChangedLibrary;
+
+
+		private void NotifyPropertyChangedLibrary([CallerMemberName] String propertyName = "")
+		{
+			PropertyChangedLibrary?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
+
+
+		public static event ProgressChangedEventHandler ProgressChangedLibrary;		
+		
 		private static int _pbProgress = 0;
 
-		private static void NotifyProgressChangedEvent(object sender, ProgressChangedEventArgs e = null)
+		private static void NotifyProgressChangedLibrary(object sender, ProgressChangedEventArgs e = null)
 		{
 			_pbProgress += 1;
-
 			e = new ProgressChangedEventArgs(_pbProgress, null);
-
 			ProgressChangedLibrary?.Invoke(sender, e);
+		}
+
+		#endregion
+
+		private static int _localProgress;
+
+		public event ProgressChangedEventHandler ProgressChanged;
+
+		private void NotifyProgressChanged(object sender, ProgressChangedEventArgs e = null)
+		{
+			_localProgress += 1;
+			e = new ProgressChangedEventArgs(_localProgress, null);
+			ProgressChanged?.Invoke(sender, e);
 		}
 
 		#region PropertyChanges
@@ -399,50 +477,6 @@ namespace PlaylistParser.Playlist
 
 		#endregion
 
-
-		#region Remove files Attributes
-
-		protected void RemoveReadOnlyAttribute(string path)
-		{
-			if (!File.Exists(path))
-				return;
-
-			FileAttributes attributes = File.GetAttributes(path);
-
-			if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-			{
-				// Make the file RW
-				attributes = RemoveAttribute(attributes, FileAttributes.ReadOnly);
-				File.SetAttributes(path, attributes);
-				Console.WriteLine(@"The {0} file is no longer RO.", path);
-			}
-			//else
-			//{
-			//	// Make the file RO
-			//	File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.Hidden);
-			//	Console.WriteLine("The {0} file is now RO.", path);
-			//}
-		}
-
-		private FileAttributes RemoveAttribute(FileAttributes attributes, FileAttributes attributesToRemove)
-		{
-			return attributes & ~attributesToRemove;
-		}
-
-		#endregion
-
-
-		#region SavePlaylist
-
-		//internal void SavePlaylist(string location = null, bool overwrite = true)
-		//{
-		//	SavePlaylist(location, overwrite);
-		//}
-
-
-		#endregion
-
-
 		#region Save Items
 
 		/// <summary>
@@ -450,8 +484,14 @@ namespace PlaylistParser.Playlist
 		/// </summary>
 		/// <param name="folderPath"></param>
 		/// <returns></returns>
-		public bool SaveItems(string folderPath)
+		public bool SaveItems(string folderPath, Action<int> progressInit = null)
 		{
+			var count = Items.Count;
+			
+			_localProgress = 0;
+
+			if (progressInit != null)
+				progressInit(count);
 
 			foreach (var item in Items)
 			{
@@ -482,7 +522,7 @@ namespace PlaylistParser.Playlist
 					Directory.CreateDirectory(System.IO.Path.GetDirectoryName(filePathDest) ?? throw new InvalidOperationException());
 
 					if (File.Exists(filePathDest))
-						RemoveReadOnlyAttribute(filePathDest);
+						filePathDest.RemoveReadOnlyAttribute();
 
 					File.Copy(item.AbsolutePath, filePathDest, true);
 				}
@@ -498,8 +538,8 @@ namespace PlaylistParser.Playlist
 				{
 					//0x80070020
 				}
-
-				NotifyProgressChangedEvent(this);
+				NotifyProgressChanged(this);
+				NotifyProgressChangedLibrary(this);
 			}
 
 			return true;
@@ -510,35 +550,13 @@ namespace PlaylistParser.Playlist
 		/// </summary>
 		/// <param name="folderPath"></param>
 		/// <returns></returns>
-		public Task<bool> SaveItemsAsync(string folderPath)
+		public Task<bool> SaveItemsAsync(string folderPath, Action<int> progressInit = null)
 		{
 			//return Task.Run(() => SaveItems(folderPath));
-			return Task.Factory.StartNew(() => SaveItems(folderPath), TaskCreationOptions.LongRunning);
+			return Task.Factory.StartNew(() => SaveItems(folderPath, progressInit), TaskCreationOptions.LongRunning);
 		}
 
-		//private Task SaveItemsAsync(string outFolder)
-		//{
-		//	return Task.Factory.StartNew(() =>
-		//			{
-		//				SaveItems(outFolder);
-		//			},
-		//			TaskCreationOptions.LongRunning);
-		//}
 
-		//internal void SaveItems(string outFolder)
-		//{
-
-		//	if (!AppSettings.Instance.UseOneFolder)
-		//	{
-		//		var folderName = GetFolder(FilePath);
-		//		OutFolder = System.IO.Path.Combine(outFolder, folderName);
-		//	}
-		//	else
-		//		OutFolder = outFolder;
-
-		//	if (!String.IsNullOrWhiteSpace(OutFolder))
-		//		_parser.SaveItems(OutFolder);
-		//}
 
 		#endregion
 

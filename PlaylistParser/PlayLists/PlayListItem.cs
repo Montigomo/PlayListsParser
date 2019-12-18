@@ -3,22 +3,23 @@
 
 namespace PlaylistParser.Playlist
 {
-	public class PlayListItem
+	public class PlaylistItem
 	{
 
-		public PlayListItem()
+		public PlaylistItem()
 		{
 		}
 
-		public PlayListItem(string uri, string absoluteruri)
+		public PlaylistItem(string uri)
 		{
 			Path = uri;
-			AbsolutePath = absoluteruri;
 		}
 
 		public string Path { get; set; }
 
 		public string AbsolutePath { get; set; }
+
+		public string RelativePath { get; set; }
 
 		public string FileName => System.IO.Path.GetFileNameWithoutExtension(Path);
 

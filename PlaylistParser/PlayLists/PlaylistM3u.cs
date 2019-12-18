@@ -27,7 +27,7 @@ namespace PlaylistParser.Playlist
 
 		#region Items
 
-		public override List<PlayListItem> Items { get; set; } = new List<PlayListItem>();
+		public override List<PlaylistItem> Items { get; set; } = new List<PlaylistItem>();
 
 
 		#endregion
@@ -37,8 +37,9 @@ namespace PlaylistParser.Playlist
 
 		#region SavePlaylist
 
-		public void SavePlaylist(string uri, bool overwrite )
+		public void SavePlaylist(bool overwrite )
 		{
+
 			// m3u header
 			string _headerm3u = $"#EXTM3U{Environment.NewLine}#PLAYLIST:{{0}}{Environment.NewLine}";
 
@@ -46,13 +47,6 @@ namespace PlaylistParser.Playlist
 			// 1 - track name
 			// 2 - path to file
 			string _linem3u = $"#EXTINF:{{0}},{{1}}{Environment.NewLine}{{2}}{Environment.NewLine}";
-
-			uri = uri ?? PlaylistPath;
-
-			FileAttributes attr = File.GetAttributes(uri);
-
-			if (attr.HasFlag(FileAttributes.Directory))
-				uri = System.IO.Path.Combine(uri, System.IO.Path.GetFileName(PlaylistPath));
 
 			StringBuilder sbn = new StringBuilder();
 
@@ -62,7 +56,7 @@ namespace PlaylistParser.Playlist
 			{
 				try
 				{
-					string itemPath = AppSettings.Instance.PlaylistItemPathFormat == PlaylistItemPath.Absolute ? item.Path : Extensions.GetRelativePath(uri, item.Path);
+					string itemPath = AppSettings.Instance.PlaylistItemPathFormat == PlaylistItemPath.Absolute ? item.AbsolutePath : item.RelativePath;
 					string line = String.Format(_linem3u, 0, item.FileName, itemPath);
 					sbn.AppendLine(line);
 				}
@@ -71,9 +65,12 @@ namespace PlaylistParser.Playlist
 
 			}
 
-			string testPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(uri), System.IO.Path.GetFileNameWithoutExtension(uri) + ".test" + System.IO.Path.GetExtension(uri));
-
-			System.IO.File.WriteAllText(testPath, sbn.ToString());
+			if (AppSettings.Instance.Debug)
+			{
+				System.IO.File.WriteAllText(NewPath, sbn.ToString());
+			}
+			else
+				System.IO.File.WriteAllText(PlaylistPath, sbn.ToString());
 
 			return;
 		}

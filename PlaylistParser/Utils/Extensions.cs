@@ -22,6 +22,33 @@ namespace PlaylistParser
 		#region File && Folders path
 
 
+		#region Remove files Attributes
+
+		public static void RemoveReadOnlyAttribute(this string path)
+		{
+			path.RemoveAttribute(FileAttributes.ReadOnly);
+		}
+
+		public static void RemoveAttribute(this string path, FileAttributes attribute)
+		{
+			if (!File.Exists(path))
+				return;
+
+			FileAttributes attributes = File.GetAttributes(path);
+
+			if ((attributes & attribute) == attribute)
+			{
+				attributes = RemoveAttribute(attributes, attribute);
+				File.SetAttributes(path, attributes);
+			}
+		}
+		private static FileAttributes RemoveAttribute(FileAttributes attributes, FileAttributes attributesToRemove)
+		{
+			return attributes & ~attributesToRemove;
+		}
+
+		#endregion
+
 		public static void SetAttributesNormal(this DirectoryInfo dir)
 		{
 			foreach (var subDir in dir.GetDirectories())
@@ -60,32 +87,38 @@ namespace PlaylistParser
 
 		#endregion
 
-		#region GetRelativePath
+		#region Relative && Absolute path
 
-		// Path.GetFullPath((new Uri(absolute_path)).LocalPath);
+		#region Absolute path
 
-		public static String GetAbsolutePath(String path)
+		//public static String GetAbsolutePath(String path)
+		//{
+		//	return GetAbsolutePath(null, path);
+		//}
+
+		//public static string GetAbsolutePathSimple(this string basePath, string path)
+		//{
+		//	basePath = Path.GetDirectoryName(basePath);
+
+		//	string finalPath;
+
+		//	if (!Path.IsPathRooted(path))
+		//		finalPath = basePath + "\\" + path;
+		//	else
+		//		finalPath = path;
+
+		//	return Path.GetFullPath(finalPath);
+		//}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="basePath">from D:\temp</param>
+		/// <param name="toPath">to ..\..\tools\z.tzt</param>
+		/// <returns></returns>
+		public static String GetAbsolutePath(this String basePath, String toPath)
 		{
-			return GetAbsolutePath(null, path);
-		}
-
-		public static string GetAbsolutePathSimple(this string basePath, string path)
-		{
-			basePath = Path.GetDirectoryName(basePath);
-
-			string finalPath;
-
-			if (!Path.IsPathRooted(path))
-				finalPath = basePath + "\\" + path;
-			else
-				finalPath = path;
-
-			return Path.GetFullPath(finalPath);
-		}
-
-		public static String GetAbsolutePath(String basePath, String path)
-		{
-			if (path == null)
+			if (toPath == null)
 				return null;
 
 			basePath = Path.GetDirectoryName(basePath);
@@ -99,27 +132,51 @@ namespace PlaylistParser
 
 			// specific for windows paths starting on \ - they need the drive added to them.
 			// I constructed this piece like this for possible Mono support.
-			if (!Path.IsPathRooted(path) || "\\".Equals(Path.GetPathRoot(path)))
+			if (!Path.IsPathRooted(toPath) || "\\".Equals(Path.GetPathRoot(toPath)))
 			{
-				if (path.StartsWith(Path.DirectorySeparatorChar.ToString()))
-					finalPath = Path.Combine(Path.GetPathRoot(basePath), path.TrimStart(Path.DirectorySeparatorChar));
+				if (toPath.StartsWith(Path.DirectorySeparatorChar.ToString()))
+					finalPath = Path.Combine(Path.GetPathRoot(basePath), toPath.TrimStart(Path.DirectorySeparatorChar));
 				else
-					finalPath = Path.Combine(basePath, path);
+					finalPath = Path.Combine(basePath, toPath);
 			}
 			else
-				finalPath = path;
+				finalPath = toPath;
 
 			// resolves any internal "..\" to get the true full path.
 			return Path.GetFullPath(finalPath);
 		}
 
+		#endregion
 
-		public static string GetRelativePath(string fromPath, string toPath)
+		#region Relative path
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="fromPath">D:\temp\1</param>
+		/// <param name="toPath">D:\temp\2\z.txt</param>
+		/// <returns></returns>
+		public static string GetRelativePath(this string fromPath, string toPath)
 		{
+			
+			if (!fromPath.IsPathAbsolute())
+				return null;
+
+			if (!toPath.IsPathAbsolute())
+				return null;
+
+			if (!File.Exists(toPath))
+				return null;
+
+			if (!Path.GetPathRoot(fromPath).Equals(Path.GetPathRoot(toPath), StringComparison.OrdinalIgnoreCase))
+				return null;
+
 			int fromAttr = GetPathAttribute(fromPath);
+
 			int toAttr = GetPathAttribute(toPath);
 
 			StringBuilder path = new StringBuilder(260); // MAX_PATH
+
 			if (PathRelativePathTo(
 					path,
 					fromPath,
@@ -135,6 +192,7 @@ namespace PlaylistParser
 		private static int GetPathAttribute(this string path)
 		{
 			DirectoryInfo di = new DirectoryInfo(path);
+
 			if (di.Exists)
 			{
 				return FILE_ATTRIBUTE_DIRECTORY;
@@ -156,6 +214,12 @@ namespace PlaylistParser
 		private static extern int PathRelativePathTo(StringBuilder pszPath,
 				string pszFrom, int dwAttrFrom, string pszTo, int dwAttrTo);
 
+		#endregion
+
+		public static bool IsPathAbsolute(this string path)
+		{
+			return Path.IsPathRooted(path) && !Path.GetPathRoot(path).Equals(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal);
+		}
 
 		public static bool IsDirectory(this string path)
 		{
@@ -180,7 +244,6 @@ namespace PlaylistParser
 					yield return PlaylistBase.Create(item);
 			}
 		}
-
 
 		/// <summary>
 		/// Try to get [name] group by using PlsFilter
@@ -215,6 +278,7 @@ namespace PlaylistParser
 		}
 
 		#endregion
+
 
 		#region Others
 
