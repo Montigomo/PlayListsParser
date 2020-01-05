@@ -87,6 +87,7 @@ namespace PlaylistParser
 
 		#endregion
 
+
 		#region Relative && Absolute path
 
 		#region Absolute path
@@ -232,19 +233,6 @@ namespace PlaylistParser
 
 		#region Playlist
 
-		public static IEnumerable<IPlaylist> GetPlayLists(this string folderPath, string regexString)
-		{
-			if (!string.IsNullOrWhiteSpace(folderPath) && File.GetAttributes(folderPath).HasFlag(FileAttributes.Directory))
-			{
-
-				var items = Directory.GetFiles(folderPath)
-					.Where(d => regexString.IsValidRegex() ? Regex.IsMatch(Path.GetFileName(d), regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase) : true);
-
-				foreach (var item in items)
-					yield return PlaylistBase.Create(item);
-			}
-		}
-
 		/// <summary>
 		/// Try to get [name] group by using PlsFilter
 		/// </summary>
@@ -282,7 +270,7 @@ namespace PlaylistParser
 
 		#region Others
 
-		private static bool IsValidRegex(this string pattern)
+		public static bool IsValidRegex(this string pattern)
 		{
 			if (string.IsNullOrEmpty(pattern)) return false;
 

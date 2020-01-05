@@ -259,7 +259,7 @@ namespace PlaylistParser
 		[Category("General")]
 		[Description("Clear destination folder.")]
 		[DisplayName("Clear folder")]
-		public bool ClearFolder { get; set; }
+		public bool ClearFolder { get; set; } = true;
 
 		[PropertyOrder(5)]
 		[Category("General")]

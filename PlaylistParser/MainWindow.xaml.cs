@@ -1,19 +1,16 @@
 ﻿using PlaylistParser.Playlist;
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Threading;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Text;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Media;
-using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace PlaylistParser
 {
@@ -362,7 +359,7 @@ namespace PlaylistParser
 			//var s1 = Path.GetPathRoot(playlist1.PlaylistPath);
 
 			//var t0 = playlist0.Check();
-			
+
 			var t1 = playlist0.Check();
 
 			playlist0.Repair();
@@ -380,7 +377,7 @@ namespace PlaylistParser
 		{
 			ToggleControls(menuItemRun);
 
-			await PlaylistBase.SaveAllItemsAsync(AppSettings.Instance.OutputFolder,ProgressBarInit).ContinueWith((v) => ProgressBarHide());
+			await PlaylistBase.SaveAllItemsAsync(AppSettings.Instance.OutputFolder, ProgressBarInit).ContinueWith((v) => ProgressBarHide());
 
 			ToggleControls(menuItemRun);
 		}
@@ -389,7 +386,6 @@ namespace PlaylistParser
 		{
 			PlaylistBase.Cancel();
 		}
-
 
 		private void wndMain_Loaded(object sender, RoutedEventArgs e)
 		{
@@ -402,16 +398,9 @@ namespace PlaylistParser
 			//Console.WriteLine("Now redirecting output to the text box");
 		}
 
-		private void SysMenuItem_ItemClick_1(object sender, EventArgs e)
-		{
-
-			SettingWindow setWindow = new SettingWindow { Owner = this };
-
-			setWindow.ShowDialog();
-		}
-
 		private void columnHeader_Click(object sender, RoutedEventArgs e)
 		{
+
 			if (sender is DataGridColumnHeader columnHeader)
 			{
 				string header = (columnHeader.Content as TextBlock)?.Text;
@@ -426,9 +415,11 @@ namespace PlaylistParser
 					//e.Handled = true;
 				}
 			}
+
 		}
 		private void DataGridMain_Sorting(object sender, DataGridSortingEventArgs e)
 		{
+
 			string header = (e.Column.Header as TextBlock)?.Text;
 			if ((e.Column.DisplayIndex == 2 && header.Equals("Extract"))
 				 || (e.Column.DisplayIndex == 3 && header.Equals("Repair")))
@@ -436,10 +427,12 @@ namespace PlaylistParser
 				//PlayLists.ForEach(t => t.Prepare = !t.Prepare);
 				e.Handled = true;
 			}
+
 		}
 
 		private void menuItemRun_Click(object sender, RoutedEventArgs e)
 		{
+
 			if (menuItemRun.Header.ToString() == "Run")
 			{
 				RunPlayListItemsSaveAsync();
@@ -448,6 +441,7 @@ namespace PlaylistParser
 			{
 				Cancel();
 			}
+
 		}
 
 		private void _testMenuItem_Click(object sender, RoutedEventArgs e)

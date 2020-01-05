@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using PlaylistParser;
 
+
 namespace PlaylistParser.Playlist
 {
 	public class PlaylistBase : INotifyPropertyChanged, IDisposable
@@ -30,7 +31,7 @@ namespace PlaylistParser.Playlist
 			if (_disposed)
 				return;
 
-			if(disposing)
+			if (disposing)
 			{
 
 			}
@@ -87,7 +88,7 @@ namespace PlaylistParser.Playlist
 					Cts = new CancellationTokenSource();
 				}
 			}
-			catch(ObjectDisposedException)
+			catch (ObjectDisposedException)
 			{
 				Cts = new CancellationTokenSource();
 			}
@@ -125,7 +126,7 @@ namespace PlaylistParser.Playlist
 
 			var count = workedPlaylists.Aggregate(0, (result, element) => result + element.Items.Count);
 
-			if(pbInit != null)
+			if (pbInit != null)
 				pbInit(count);
 
 			if (AppSettings.Instance.ClearFolder)
@@ -166,7 +167,7 @@ namespace PlaylistParser.Playlist
 		{
 			if (_playLists != null)
 				_playLists.Clear();
-			_playLists = new ObservableCollection<IPlaylist>(AppSettings.Instance.PlaylistsFolder.GetPlayLists(AppSettings.Instance.PlsFilter));
+			_playLists = new ObservableCollection<IPlaylist>(GetPlayLists(AppSettings.Instance.PlaylistsFolder, AppSettings.Instance.PlsFilter));
 		}
 
 		private static CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
@@ -273,10 +274,13 @@ namespace PlaylistParser.Playlist
 
 		public static void RepairAll(bool save = true)
 		{
+			var items = Playlists.Where(item => item.IsNeedRepair && item.WillRepair);
+
 			//Playlists.AsParallel().ForAll(item => item.Repair());
-			Playlists.ForEach(item => item.Repair());
-			if(save)
-				Playlists.ForEach(item => item.SavePlaylist());
+
+			items.ForEach(item => item.Repair());
+			if (save)
+				items.ForEach(item => item.SavePlaylist());
 		}
 
 		public Task CheckAsync()
@@ -325,7 +329,7 @@ namespace PlaylistParser.Playlist
 			if (!Check())
 			{
 				var corrupted = Items.Where(item => !CheckPath(item));
-				
+
 				cc = corrupted.Count();
 
 				foreach (var item in corrupted)
@@ -337,11 +341,11 @@ namespace PlaylistParser.Playlist
 				}
 
 				var todelete = Items.Where(item => !CheckPath(item));
-				
+
 				dc = todelete.Count();
-				
+
 				//if (!AppSettings.Instance.Debug)
-					Items.RemoveAll(item => !CheckPath(item));
+				Items.RemoveAll(item => !CheckPath(item));
 
 				Console.WriteLine($@"Playlist {Title} repaired - {cc} removed - {dc}");
 
@@ -358,7 +362,7 @@ namespace PlaylistParser.Playlist
 
 		protected void ActualizePathesAll(string previousPath = null)
 		{
-			foreach(var item in Items)
+			foreach (var item in Items)
 			{
 				ActualizePathes(item);
 			}
@@ -378,6 +382,25 @@ namespace PlaylistParser.Playlist
 
 
 		#region Constructor && Initialize
+
+		private static IEnumerable<IPlaylist> GetPlayLists(string folderPath, string regexString)
+		{
+			if (!string.IsNullOrWhiteSpace(folderPath) && File.GetAttributes(folderPath).HasFlag(FileAttributes.Directory))
+			{
+
+				var items = Directory.GetFiles(folderPath)
+					.Where(d =>
+					{
+						var result = (Path.GetExtension(d) == ".m3u" || Path.GetExtension(d) == ".wpl");
+						result = result && (regexString.IsValidRegex() ? Regex.IsMatch(Path.GetFileName(d), regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase) : true);
+						return result;
+					});
+
+				foreach (var item in items)
+					yield return PlaylistBase.Create(item);
+			}
+		}
+
 
 		public static IPlaylist Create(string playlistPath)
 		{
@@ -440,8 +463,8 @@ namespace PlaylistParser.Playlist
 		}
 
 
-		public static event ProgressChangedEventHandler ProgressChangedLibrary;		
-		
+		public static event ProgressChangedEventHandler ProgressChangedLibrary;
+
 		private static int _pbProgress = 0;
 
 		private static void NotifyProgressChangedLibrary(object sender, ProgressChangedEventArgs e = null)
@@ -487,7 +510,7 @@ namespace PlaylistParser.Playlist
 		public bool SaveItems(string folderPath, Action<int> progressInit = null)
 		{
 			var count = Items.Count;
-			
+
 			_localProgress = 0;
 
 			if (progressInit != null)

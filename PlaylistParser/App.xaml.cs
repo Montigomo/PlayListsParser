@@ -19,7 +19,7 @@ namespace PlaylistParser
 		public static readonly string AppTitle = $@"Playlist Parser - {Version}";
 
 
-        internal static MemoryMappedFile sharedMemory;
+		internal static MemoryMappedFile sharedMemory;
 
 		private static volatile Mutex _instanceMutex = null;
 		private static string _appGuid = "{CF1A37DC-C651-4C8F-B739-4B6E214E0810}";
@@ -82,8 +82,8 @@ namespace PlaylistParser
 		private void ApplicationDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
 		{
 			string errorMessage =
-			    "An application error occurred. If this error occurs again there seems to be a serious bug in the application, and you better close it.\n\n" +
-			    $"Error:{e.Exception.Message}\n\nDo you want to continue?\n (if you click Yes you will continue with your work, if you click No the application will close)";
+					"An application error occurred. If this error occurs again there seems to be a serious bug in the application, and you better close it.\n\n" +
+					$"Error:{e.Exception.Message}\n\nDo you want to continue?\n (if you click Yes you will continue with your work, if you click No the application will close)";
 
 			//insert code to log exception here 
 			if (MessageBox.Show(errorMessage, "Application UnhandledException Error", MessageBoxButton.YesNoCancel, MessageBoxImage.Error) == MessageBoxResult.No)
@@ -99,7 +99,7 @@ namespace PlaylistParser
 
 		private void Application_Exit(object sender, ExitEventArgs e)
 		{
-		    sharedMemory?.Dispose();
+			sharedMemory?.Dispose();
 		}
 
 
