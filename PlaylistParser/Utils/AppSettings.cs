@@ -289,6 +289,14 @@ namespace PlaylistParser
 		[DisplayName("Playlist item path")]
 		public PlaylistItemPath PlaylistItemPathFormat { get; set; }
 
+
+		#region folder or file open dialogs
+
+		[Browsable(false)]
+		public string MenuItemOpenFolder { get; set; }
+
+		#endregion
+
 		#endregion
 
 		#region PropertyChanges

@@ -23,7 +23,7 @@ namespace PlaylistParser.Playlist
 		public void Dispose()
 		{
 			Dispose(true);
-			GC.SuppressFinalize(this);
+			//GC.SuppressFinalize(this);
 		}
 
 		protected virtual void Dispose(bool disposing)
@@ -36,7 +36,7 @@ namespace PlaylistParser.Playlist
 
 			}
 
-			Cts.Dispose();
+			//CancelationToken.Dispose();
 		}
 
 		~PlaylistBase()
@@ -52,6 +52,7 @@ namespace PlaylistParser.Playlist
 		static PlaylistBase()
 		{
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
+			GC.SuppressFinalize(CancelationToken);
 
 		}
 
@@ -63,37 +64,44 @@ namespace PlaylistParser.Playlist
 			}
 		}
 
-		private static ObservableCollection<IPlaylist> _playLists;
+		private static ObservableCollection<IPlaylist> _playLists = new ObservableCollection<IPlaylist>();
 
 		public static ObservableCollection<IPlaylist> Playlists
 		{
 			get
 			{
-				if (_playLists == null)
-					Refresh();
+				Refresh();
 				return _playLists;
 			}
 		}
 
 		#region SaveAllItems
 
-		public static Task SaveAllItemsAsync(string outFolder, Action<int> pbInit)
+		private static void CheckCancelationToken()
 		{
-			var tsc = new TaskCompletionSource<bool>();
 			try
 			{
-				if (Cts.Token.IsCancellationRequested)
-				{
-					Cts.Dispose();
-					Cts = new CancellationTokenSource();
-				}
+				CancelationToken.Dispose();
+				CancelationToken = new CancellationTokenSource();
 			}
 			catch (ObjectDisposedException)
 			{
-				Cts = new CancellationTokenSource();
+				CancelationToken = new CancellationTokenSource();
 			}
+		}
 
-			//var cts = new CancellationTokenSource();
+		private static void TaskCompleted(bool antecedent)
+		{
+			CheckCancelationToken();
+		}
+
+
+		public static Task SaveAllItemsAsync(string outFolder, Action<int> pbInit)
+		{
+			var tsc = new TaskCompletionSource<bool>();
+
+			if (CancelationToken.Token.IsCancellationRequested)
+				return Task.CompletedTask;
 
 			//Task.Factory.StartNew(() =>
 			//{
@@ -107,7 +115,7 @@ namespace PlaylistParser.Playlist
 				tsc.SetResult(true);
 			}).Start();
 
-			return tsc.Task;
+			return tsc.Task.ContinueWith((antecedent) => TaskCompleted(antecedent.Result));
 
 			//return Task.Run(() => SaveItems(outFolder, pbInit));
 
@@ -120,6 +128,12 @@ namespace PlaylistParser.Playlist
 
 		private static void SaveAllItems(string outFolder, Action<int> pbInit)
 		{
+			if (String.IsNullOrWhiteSpace(outFolder))
+			{
+				Console.WriteLine("Invalid output directory".WriteError());
+				return;
+			}
+
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 
 			var workedPlaylists = Playlists.Where(p => p.Process).ToList();
@@ -135,14 +149,14 @@ namespace PlaylistParser.Playlist
 
 				foreach (FileInfo file in di.GetFiles())
 				{
-					if (Cts.Token.IsCancellationRequested)
+					if (CancelationToken.Token.IsCancellationRequested)
 						return;
 					file.Delete();
 				}
 
 				foreach (DirectoryInfo dir in di.GetDirectories())
 				{
-					if (Cts.Token.IsCancellationRequested)
+					if (CancelationToken.Token.IsCancellationRequested)
 						return;
 					dir.SetAttributesNormal();
 					dir.Delete(true);
@@ -165,17 +179,54 @@ namespace PlaylistParser.Playlist
 
 		public static void Refresh()
 		{
-			if (_playLists != null)
-				_playLists.Clear();
-			_playLists = new ObservableCollection<IPlaylist>(GetPlayLists(AppSettings.Instance.PlaylistsFolder, AppSettings.Instance.PlsFilter));
+			if (Directory.Exists(AppSettings.Instance.PlaylistsFolder))
+				AddItems(AppSettings.Instance.PlaylistsFolder, true, true);
+			else
+				Console.WriteLine("Invalid playlists directory".WriteError());
 		}
 
-		private static CancellationTokenSource Cts { get; set; } = new CancellationTokenSource();
+		internal static CancellationTokenSource CancelationToken { get; set; } = new CancellationTokenSource();
 
 		public static void Cancel()
 		{
-			Cts.Cancel();
+			CancelationToken.Cancel();
 		}
+
+		public static void AddItems(string url, bool filter = true, bool clear = false)
+		{
+			if (!string.IsNullOrWhiteSpace(url))
+			{
+				if (url.IsDirectory())
+				{
+					AddItems(Directory.GetFiles(url), filter, clear);
+				}
+				else
+				{
+					AddItems(new List<string>() { url }, filter, clear);
+				}
+			}
+		}
+
+		public static void AddItems(IEnumerable<string> files, bool filter = true, bool clear = false)
+		{
+			if (clear)
+				_playLists = new ObservableCollection<IPlaylist>(NamesFilter(files));
+			else
+				NamesFilter(files).ForEach(_playLists.Add);
+		}
+
+		private static IEnumerable<IPlaylist> NamesFilter(IEnumerable<string> items, bool filter = true)
+		{
+			string regex = AppSettings.Instance.PlsFilter;
+			return items.Where(item =>
+			{
+				var result = (Path.GetExtension(item) == ".m3u" || Path.GetExtension(item) == ".wpl");
+				if (filter)
+					result = result && (regex.IsValidRegex() ? Regex.IsMatch(Path.GetFileName(item), regex, RegexOptions.Compiled | RegexOptions.IgnoreCase) : true);
+				return result;
+			}).Select(item => PlaylistBase.Create(item));
+		}
+
 
 		#endregion
 
@@ -383,24 +434,6 @@ namespace PlaylistParser.Playlist
 
 		#region Constructor && Initialize
 
-		private static IEnumerable<IPlaylist> GetPlayLists(string folderPath, string regexString)
-		{
-			if (!string.IsNullOrWhiteSpace(folderPath) && File.GetAttributes(folderPath).HasFlag(FileAttributes.Directory))
-			{
-
-				var items = Directory.GetFiles(folderPath)
-					.Where(d =>
-					{
-						var result = (Path.GetExtension(d) == ".m3u" || Path.GetExtension(d) == ".wpl");
-						result = result && (regexString.IsValidRegex() ? Regex.IsMatch(Path.GetFileName(d), regexString, RegexOptions.Compiled | RegexOptions.IgnoreCase) : true);
-						return result;
-					});
-
-				foreach (var item in items)
-					yield return PlaylistBase.Create(item);
-			}
-		}
-
 
 		public static IPlaylist Create(string playlistPath)
 		{
@@ -500,6 +533,7 @@ namespace PlaylistParser.Playlist
 
 		#endregion
 
+
 		#region Save Items
 
 		/// <summary>
@@ -518,7 +552,7 @@ namespace PlaylistParser.Playlist
 
 			foreach (var item in Items)
 			{
-				if (Cts.Token.IsCancellationRequested)
+				if (CancelationToken.Token.IsCancellationRequested)
 					return false;
 
 				var fileName = System.IO.Path.GetFileName(item.Path);

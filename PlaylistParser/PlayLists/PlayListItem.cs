@@ -8,6 +8,7 @@ namespace PlaylistParser.Playlist
 
 		public PlaylistItem()
 		{
+
 		}
 
 		public PlaylistItem(string uri)

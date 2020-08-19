@@ -1,4 +1,5 @@
-﻿using PlaylistParser.Playlist;
+﻿using Microsoft.WindowsAPICodePack.Dialogs;
+using PlaylistParser.Playlist;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -44,7 +45,9 @@ namespace PlaylistParser
 			PropertyGridMain.SelectedObject = AppSettings.Instance;
 
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
+
 			PlaylistBase.PropertyChangedLibrary += PlayList_PropertyChangedStatic;
+
 			RepairToggle();
 		}
 
@@ -288,35 +291,15 @@ namespace PlaylistParser
 		#endregion
 
 
-		#region Folders pickup
-
-		//private void PlayListsFolderPickup()
-		//{
-		//	var dialog = new CommonOpenFileDialog() { IsFolderPicker = true, InitialDirectory = PlayListsFodler };
-		//	//OpenFileDialog openFileDialog = new OpenFileDialog() { Filter = "Wmp Playlists|*.wpl;*.m3u", InitialDirectory = };
-		//	if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
-		//	{
-		//		PlayListsFodler = dialog.FileName;
-		//		BindGrid();
-		//	}
-		//}
-
-		//private void OutputFolderPickup()
-		//{
-		//	var dialog = new CommonOpenFileDialog() { IsFolderPicker = true, InitialDirectory = OutputFolder };
-		//	if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
-		//	{
-		//		OutputFolder = dialog.FileName;
-		//	}
-		//}
-
-		#endregion
-
-
 		#region Check && Repair
 
 		private async void Check()
 		{
+			if(Library == null)
+			{
+				Console.WriteLine("Playlists is empty.".WriteError());
+				return;
+			}
 			ToggleControls(menuItemCheck);
 
 			await Task.WhenAll(Library.Select(item => item.CheckAsync()));
@@ -328,8 +311,9 @@ namespace PlaylistParser
 		{
 			this.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
 			{
-				this.menuItemRepare.IsEnabled = Library.Any(item => item.IsNeedRepair);
-				this.menuItemReparePreview.IsEnabled = Library.Any(item => item.IsNeedRepair);
+				var value = Library == null ? false : Library.Any(item => item.IsNeedRepair);
+				this.menuItemRepare.IsEnabled = value;
+				this.menuItemReparePreview.IsEnabled = value;
 			}));
 		}
 
@@ -340,32 +324,32 @@ namespace PlaylistParser
 
 		private void Test()
 		{
-			var s10 = @"D:\music\Playlists\A.Ambient.wpl";
-			var s11 = @"D:\music\Playlists\A.Pop.m3u";
-			var s12 = @"..\..\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
-			var s13 = @"D:\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
+			//var s10 = @"D:\music\Playlists\A.Ambient.wpl";
+			//var s11 = @"D:\music\Playlists\A.Pop.m3u";
+			//var s12 = @"..\..\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
+			//var s13 = @"D:\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
 
-			var s21 = s11.GetAbsolutePath(s12);
-			var s22 = s11.GetAbsolutePath(s13);
+			//var s21 = s11.GetAbsolutePath(s12);
+			//var s22 = s11.GetAbsolutePath(s13);
 
-			var s31 = s11.GetRelativePath(s12);
-			var s32 = s11.GetRelativePath(s13);
+			//var s31 = s11.GetRelativePath(s12);
+			//var s32 = s11.GetRelativePath(s13);
 
 
-			var playlist0 = PlaylistBase.Create(s11);
-			//var playlist1 = Library.FirstOrDefault(item => item.Title == "A.Pop");
+			//var playlist0 = PlaylistBase.Create(s11);
+			////var playlist1 = Library.FirstOrDefault(item => item.Title == "A.Pop");
 
-			//var s0 = Path.GetPathRoot(playlist0.PlaylistPath);
-			//var s1 = Path.GetPathRoot(playlist1.PlaylistPath);
+			////var s0 = Path.GetPathRoot(playlist0.PlaylistPath);
+			////var s1 = Path.GetPathRoot(playlist1.PlaylistPath);
 
-			//var t0 = playlist0.Check();
+			////var t0 = playlist0.Check();
 
-			var t1 = playlist0.Check();
+			//var t1 = playlist0.Check();
 
-			playlist0.Repair();
-			playlist0.SavePlaylist();
+			//playlist0.Repair();
+			//playlist0.SavePlaylist();
 
-			t1 = playlist0.Check();
+			//t1 = playlist0.Check();
 		}
 
 		#endregion
@@ -480,6 +464,37 @@ namespace PlaylistParser
 		private void menuItemReparePreview_Click(object sender, RoutedEventArgs e)
 		{
 			PlaylistBase.RepairAll(false);
+		}
+
+		private void menuItemOpenFile_Click(object sender, RoutedEventArgs e)
+		{
+			var dialog = new CommonOpenFileDialog()
+			{
+				IsFolderPicker = false,
+				InitialDirectory = AppSettings.Instance.MenuItemOpenFolder,
+				Multiselect = true
+			};
+
+			if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+			{
+				//AppSettings.Instance.MenuItemOpenFolder = dialog.FileNames;
+				PlaylistBase.AddItems(dialog.FileNames);
+			}
+		}
+
+		private void menuItemOpenFolder_Click(object sender, RoutedEventArgs e)
+		{
+			var dialog = new CommonOpenFileDialog()
+			{
+				IsFolderPicker = true,
+				InitialDirectory = AppSettings.Instance.MenuItemOpenFolder
+			};
+
+			if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+			{
+				AppSettings.Instance.MenuItemOpenFolder = dialog.FileName;
+				PlaylistBase.AddItems(dialog.FileName);
+			}
 		}
 	}
 

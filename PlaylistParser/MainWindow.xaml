@@ -26,8 +26,8 @@
 
 		<Menu Height="22" x:Name="MainMenu" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3" MouseDoubleClick="MainMenu_MouseDoubleClick">
 			<MenuItem Header="Open">
-				<MenuItem x:Name="menuItemOpenFile" Header="Open file" Height="22" Tag="toggle"/>
-				<MenuItem x:Name="menuItemOpenFolder" Header="Open folder" Height="22" Tag="toggle"/>
+				<MenuItem x:Name="menuItemOpenFile" Header="Add file" Height="22" Tag="toggle" Click="menuItemOpenFile_Click"/>
+				<MenuItem x:Name="menuItemOpenFolder" Header="Add folder" Height="22" Tag="toggle" Click="menuItemOpenFolder_Click"/>
 			</MenuItem>
 			<MenuItem Header="Tools" Tag="toggle">
 				<MenuItem x:Name="menuItemRepare" Header="Repair" Height="22" Tag="toggle" Click="menuItemRepare_Click"/>

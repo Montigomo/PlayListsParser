@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
+using PlaylistParser.Playlist;
 
 namespace PlaylistParser
 {
@@ -97,11 +98,16 @@ namespace PlaylistParser
 			e.Handled = true;
 		}
 
-		private void Application_Exit(object sender, ExitEventArgs e)
+
+		private void Application_Exit_1(object sender, ExitEventArgs e)
 		{
 			sharedMemory?.Dispose();
+			PlaylistBase.CancelationToken.Dispose();
 		}
 
+		private void Application_Startup(object sender, StartupEventArgs e)
+		{
 
+		}
 	}
 }

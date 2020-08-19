@@ -209,6 +209,7 @@ namespace PlaylistParser
 		}
 
 		private const int FILE_ATTRIBUTE_DIRECTORY = 0x10;
+
 		private const int FILE_ATTRIBUTE_NORMAL = 0x80;
 
 		[DllImport("shlwapi.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -240,19 +241,31 @@ namespace PlaylistParser
 		/// <returns></returns>
 		public static string TryGetFolder(this IPlaylist playlist, string toPath, bool oneFolder)
 		{
-			var result = string.Empty;
+			var result = playlist.Title;
 
 			if (!Directory.Exists(toPath))
 				throw new Exception($@"Folder {toPath} don't exist.");
 
-			if (!oneFolder)
+			try
 			{
-				var match = Regex.Match(playlist.PlaylistPath, AppSettings.Instance.PlsFilter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-				if (match.Success)
-					result = match.Groups["name"].Value;
+				if (!oneFolder)
+				{
+					var match = Regex.Match(playlist.PlaylistPath, AppSettings.Instance.PlsFilter, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+					if (match.Success)
+						result = match.Groups["name"].Value;
+					else
+						result = playlist.Title;
+				}
 				else
-					result = playlist.Title;
+				{
+					result = String.Empty;
+				}
+			}
+			catch(Exception e)
+			{
+				Console.WriteLine(e.Message);
 			}
 
 			result = Path.Combine(toPath, result);
@@ -269,6 +282,11 @@ namespace PlaylistParser
 
 
 		#region Others
+
+		public static string WriteError(this string outMessage)
+		{
+			return $@"ERROR: {outMessage}";
+		}
 
 		public static bool IsValidRegex(this string pattern)
 		{
