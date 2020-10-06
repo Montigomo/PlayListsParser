@@ -15,17 +15,28 @@
 
 	<Window.Resources>
 		<local:NBoolYoBoolConverter x:Key="NBoolYoBoolConverter" />
+		<Style x:Key="HorizontalGridSplitter"
+       TargetType="{x:Type GridSplitter}">
+			<Setter Property="Height"
+            Value="4" />
+			<Setter Property="HorizontalAlignment"
+            Value="Stretch" />
+			<Setter Property="VerticalAlignment"
+            Value="Stretch" />
+			<Setter Property="Margin"
+            Value="0" />
+		</Style>
 	</Window.Resources>
 
 	<Grid>
 		<Grid.RowDefinitions>
-			<RowDefinition Height="24"/>
+			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*" />
-			<RowDefinition Height="30" />
+			<RowDefinition Height="Auto" />
 		</Grid.RowDefinitions>
 
-		<Menu Height="22" x:Name="MainMenu" VerticalAlignment="Top" Grid.Row="0" Grid.ColumnSpan="3" MouseDoubleClick="MainMenu_MouseDoubleClick">
-			<MenuItem Header="Open">
+		<Menu Height="22" x:Name="MainMenu" VerticalAlignment="Top" Grid.Row="0" MouseDoubleClick="MainMenu_MouseDoubleClick">
+			<MenuItem Header="File">
 				<MenuItem x:Name="menuItemOpenFile" Header="Add file" Height="22" Tag="toggle" Click="menuItemOpenFile_Click"/>
 				<MenuItem x:Name="menuItemOpenFolder" Header="Add folder" Height="22" Tag="toggle" Click="menuItemOpenFolder_Click"/>
 			</MenuItem>
@@ -38,26 +49,23 @@
 				<MenuItem.ToolTip>
 					<TextBlock Text="Extract all items from selected playlists and save it to destination" Background="LightGoldenrodYellow" />
 				</MenuItem.ToolTip>
-			</MenuItem>			
+			</MenuItem>
 			<MenuItem Header="Test" Click="_testMenuItem_Click"  Tag="t__oggle" />
 			<!--<MenuItem Header="{Resx _helpMenuItem.Header}" Name="_helpMenuItem">
 			<MenuItem Header="{Resx _aboutMenuItem.Header}" Icon="{Resx _aboutMenuItem.Icon}" Name="_aboutMenuItem" />
       </MenuItem>-->
+			<MenuItem x:Name="menuItemSettings" Header="Settings" Click="menuItemSettings_Click"/>
 			<MenuItem Header="Help"/>
 		</Menu>
 
 		<Grid Grid.Row="1">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="0.8*"/>
-				<ColumnDefinition Width="3"/>
-				<ColumnDefinition Width="*"/>
-			</Grid.ColumnDefinitions>
 			<Grid.RowDefinitions>
-				<RowDefinition Height="2*" />
+				<RowDefinition Height="4*" />
+				<RowDefinition Height="Auto" />
 				<RowDefinition Height="*" />
 			</Grid.RowDefinitions>
 
-			<DataGrid x:Name="DataGridMain" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"  Tag="toggle" Sorting="DataGridMain_Sorting">
+			<DataGrid x:Name="DataGridMain" Grid.Row="0" Tag="toggle" Sorting="DataGridMain_Sorting" >
 				<DataGrid.RowStyle>
 					<Style TargetType="DataGridRow">
 						<Style.Triggers>
@@ -87,14 +95,22 @@
 				</DataGrid.ContextMenu>
 			</DataGrid>
 
-			<GridSplitter  HorizontalAlignment="Stretch" Width="5" Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" />
+			<GridSplitter Grid.Row="1"
+              ResizeDirection="Rows"
+              Style="{StaticResource HorizontalGridSplitter}"
+              IsTabStop="False" />
 
-			<xctk:PropertyGrid x:Name="PropertyGridMain" Grid.Column="2" Grid.Row="0" Margin="3"   Tag="toggle"/>
 
-			<TextBox x:Name="TextBoxLog" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Margin="3" IsReadOnly="True" FontSize="10" VerticalScrollBarVisibility="Auto" />
+			<!--<xctk:PropertyGrid x:Name="PropertyGridMain" Grid.Column="3" Grid.Row="0" Margin="3"   Tag="toggle"/>-->
+			<DockPanel  Grid.Row="2" Background="#FFF0F0F0">
+
+				<TextBox x:Name="TextBoxLog" TextWrapping="Wrap" Margin="3" 
+							 IsReadOnly="True" FontSize="10" VerticalScrollBarVisibility="Auto" Width="970" />
+			</DockPanel>
+			
 		</Grid>
 
-		<StatusBar Grid.ColumnSpan="3" Grid.Row="2" Margin="0">
+		<StatusBar  Grid.Row="2" Margin="0" Height="35">
 			<!--<StatusBar.ItemsPanel>
 				<ItemsPanelTemplate>
 					<Grid>
@@ -111,5 +127,6 @@
 				<ProgressBar  x:Name="ProgressBarMain"/>
 			</StatusBarItem>
 		</StatusBar>
+		
 	</Grid>
 </Window>

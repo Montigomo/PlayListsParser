@@ -60,8 +60,11 @@ namespace PlaylistParser.Playlist
 				File.Delete(uriNew);
 				throw;
 			}
+
 			File.Copy(uriNew, PlaylistPath, true);
+
 			File.Delete(uriNew);
+
 		}
 
 		#endregion

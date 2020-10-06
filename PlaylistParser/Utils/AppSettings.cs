@@ -229,7 +229,11 @@ namespace PlaylistParser
 
 		// @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)"
 		[Browsable(false)]
-		public PlsFolderFilterList PlsFilterCollection { get; set; } = new PlsFolderFilterList() { "*", @"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)" };
+		public PlsFolderFilterList PlsFilterCollection { get; set; } = new PlsFolderFilterList() { 
+			"*", 
+			@"(?<pre>((Av\.)|(A\.)))(?<name>[A-Za-z0-9.]+)\.(?<ext>wpl|m3u)",
+			@"(?<pre>((Av\.)|(A\.)))(?<name>.+)\.(?<ext>wpl|m3u)"
+		};
 
 		private int _plsFilterIndex = 0;
 

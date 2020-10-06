@@ -53,7 +53,7 @@ namespace PlaylistParser.Playlist
 		{
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
 			GC.SuppressFinalize(CancelationToken);
-
+			Refresh();
 		}
 
 		private static void SettingsPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -70,7 +70,6 @@ namespace PlaylistParser.Playlist
 		{
 			get
 			{
-				Refresh();
 				return _playLists;
 			}
 		}
@@ -277,7 +276,7 @@ namespace PlaylistParser.Playlist
 		/// <summary>
 		/// Is playlist contains missed or broken items and need to repair
 		/// </summary>
-		public virtual bool IsNeedRepair
+		public bool IsNeedRepair
 		{
 			get => _isNeedRepair;
 			protected set
@@ -330,8 +329,9 @@ namespace PlaylistParser.Playlist
 			//Playlists.AsParallel().ForAll(item => item.Repair());
 
 			items.ForEach(item => item.Repair());
+
 			if (save)
-				items.ForEach(item => item.SavePlaylist());
+				items.ForEach(item => item.SavePlaylist(true));
 		}
 
 		public Task CheckAsync()
@@ -566,10 +566,16 @@ namespace PlaylistParser.Playlist
 					var tagVar = TagLib.File.Create(item.AbsolutePath);
 					var artist = String.Join(", ", tagVar.Tag.Performers);
 					var title = tagVar.Tag.Title;
+					var album = tagVar.Tag.Album;
+
+					//album = album ?? 
 
 					if (!string.IsNullOrWhiteSpace(artist) && !string.IsNullOrWhiteSpace(title))
 					{
 						fileName = $@"{artist} - {title}";
+
+						if (!string.IsNullOrWhiteSpace(album))
+							fileName += $@" - {album}";
 
 						fileName = fileName.SanitizePath();
 

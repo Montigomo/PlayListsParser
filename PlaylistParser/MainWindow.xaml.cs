@@ -42,7 +42,7 @@ namespace PlaylistParser
 
 			Binding();
 
-			PropertyGridMain.SelectedObject = AppSettings.Instance;
+			//PropertyGridMain.SelectedObject = AppSettings.Instance;
 
 			AppSettings.Instance.PropertyChanged += SettingsPropertyChanged;
 
@@ -295,7 +295,7 @@ namespace PlaylistParser
 
 		private async void Check()
 		{
-			if(Library == null)
+			if (Library == null)
 			{
 				Console.WriteLine("Playlists is empty.".WriteError());
 				return;
@@ -324,7 +324,7 @@ namespace PlaylistParser
 
 		private void Test()
 		{
-			//var s10 = @"D:\music\Playlists\A.Ambient.wpl";
+			var s10 = @"D:\music\Playlists\A.2005 - The Very Best Of Mozart.wpl";
 			//var s11 = @"D:\music\Playlists\A.Pop.m3u";
 			//var s12 = @"..\..\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
 			//var s13 = @"D:\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
@@ -336,13 +336,13 @@ namespace PlaylistParser
 			//var s32 = s11.GetRelativePath(s13);
 
 
-			//var playlist0 = PlaylistBase.Create(s11);
+			var playlist0 = PlaylistBase.Create(s10);
 			////var playlist1 = Library.FirstOrDefault(item => item.Title == "A.Pop");
 
 			////var s0 = Path.GetPathRoot(playlist0.PlaylistPath);
 			////var s1 = Path.GetPathRoot(playlist1.PlaylistPath);
 
-			////var t0 = playlist0.Check();
+			var t0 = playlist0.Check();
 
 			//var t1 = playlist0.Check();
 
@@ -495,6 +495,13 @@ namespace PlaylistParser
 				AppSettings.Instance.MenuItemOpenFolder = dialog.FileName;
 				PlaylistBase.AddItems(dialog.FileName);
 			}
+		}
+
+		private void menuItemSettings_Click(object sender, RoutedEventArgs e)
+		{
+			WindowSettings settingsWindow = new WindowSettings();
+			Nullable<bool> dlgResult = settingsWindow.ShowDialog();
+
 		}
 	}
 
