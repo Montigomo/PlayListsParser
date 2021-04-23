@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PlaylistParser"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" x:Class="PlaylistParser.WindowSettings"
+	      WindowStartupLocation="CenterOwner"
         mc:Ignorable="d"
         Title="WindowSettings" Height="450" Width="800">
 	<Grid>

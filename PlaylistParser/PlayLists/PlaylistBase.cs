@@ -322,16 +322,18 @@ namespace PlaylistParser.Playlist
 			Playlists.Select(item => item.Check());
 		}
 
-		public static void RepairAll(bool save = true)
+		public static void RepairAll(bool preview = false)
 		{
 			var items = Playlists.Where(item => item.IsNeedRepair && item.WillRepair);
 
 			//Playlists.AsParallel().ForAll(item => item.Repair());
 
-			items.ForEach(item => item.Repair());
+			items.ForEach(item => item.Repair(preview));
 
-			if (save)
+			if (!preview)
+			{
 				items.ForEach(item => item.SavePlaylist(true));
+			}
 		}
 
 		public Task CheckAsync()
@@ -354,26 +356,43 @@ namespace PlaylistParser.Playlist
 		}
 
 		/// <summary>
-		/// 
+		/// Detect if AbsolutePath and Path have correct values
 		/// </summary>
 		/// <param name="item"></param>
 		/// <returns>true if valid false if not valid</returns>
 		private bool CheckPath(PlaylistItem item)
 		{
 			var result = File.Exists(item.AbsolutePath);
-			if (result && !Path.IsPathRooted(item.Path))
+
+			// detect if member Path absolute or not and then check it value for correct path
+			if (result)
 			{
-				//var mc = Regex.Matches(item.Path, @"\.\.\\").Count;
-				//var prp = Path.GetDirectoryName(PlaylistPath);
-				//var lc = Regex.Matches(prp, @"\\\S").Count;
-				//result = (mc == lc);
-				var t = Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath);
-				result = item.Path.Equals(t);
+				if(Path.IsPathRooted(item.Path))
+				{
+					result = File.Exists(item.Path);
+				}
+				else
+				{
+					var t = Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath);
+					result = item.Path.Equals(t);
+				}
 			}
 			return result;
 		}
 
-		public void Repair()
+		private void RepairPath()
+		{
+			var corrupted = Items.Where(item => !CheckPath(item));
+			foreach (var item in corrupted)
+			{
+				if (File.Exists(item.AbsolutePath))
+				{
+					item.Path = Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath);
+				}
+			}
+		}
+
+		public void Repair(bool preview = false)
 		{
 			int cc = 0, dc = 0;
 
@@ -383,23 +402,24 @@ namespace PlaylistParser.Playlist
 
 				cc = corrupted.Count();
 
-				foreach (var item in corrupted)
-				{
-					if (File.Exists(item.AbsolutePath))
-					{
-						item.Path = Extensions.GetRelativePath(PlaylistPath, item.AbsolutePath);
-					}
-				}
+				RepairPath();
 
 				var todelete = Items.Where(item => !CheckPath(item));
 
 				dc = todelete.Count();
 
-				//if (!AppSettings.Instance.Debug)
-				Items.RemoveAll(item => !CheckPath(item));
-
 				Console.WriteLine($@"Playlist {Title} repaired - {cc} removed - {dc}");
+				if (todelete.Count() > 0)
+				{
+					var t = String.Join("", todelete.Select(item => $@"{item.Path} {Environment.NewLine}"));
+					t = t.Substring(0, t.Length - 2);
+					Console.WriteLine(t);
+				}
 
+				if (!preview)
+				{
+					Items.RemoveAll(item => !CheckPath(item));
+				}
 			}
 		}
 

@@ -12,6 +12,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Input;
 
 namespace PlaylistParser
 {
@@ -395,7 +396,23 @@ namespace PlaylistParser
 				}
 				else if (columnHeader.DisplayIndex == 3 && header == "Repair")
 				{
-					Library.ForEach(t => t.WillRepair = !t.WillRepair);
+					var cnr = Library.Where(t => t.WillRepair).Count();
+					var toggle = (cnr > 0 && (cnr < Library.Count));
+					if (Keyboard.IsKeyDown(Key.LeftCtrl) && toggle)
+					{
+						if (cnr < (Library.Count / 2))
+						{
+							Library.ForEach(t => t.WillRepair = false);
+						}
+						else
+						{
+							Library.ForEach(t => t.WillRepair = true);
+						}
+					}
+					else
+					{
+						Library.ForEach(t => t.WillRepair = !t.WillRepair);
+					}
 					//e.Handled = true;
 				}
 			}
@@ -463,7 +480,7 @@ namespace PlaylistParser
 
 		private void menuItemReparePreview_Click(object sender, RoutedEventArgs e)
 		{
-			PlaylistBase.RepairAll(false);
+			PlaylistBase.RepairAll(true);
 		}
 
 		private void menuItemOpenFile_Click(object sender, RoutedEventArgs e)
@@ -500,8 +517,62 @@ namespace PlaylistParser
 		private void menuItemSettings_Click(object sender, RoutedEventArgs e)
 		{
 			WindowSettings settingsWindow = new WindowSettings();
+			settingsWindow.Owner = this;
 			Nullable<bool> dlgResult = settingsWindow.ShowDialog();
 
+		}
+
+
+		protected override void OnInitialized(EventArgs e)
+		{
+			SourceInitialized += OnSourceInitialized;
+			base.OnInitialized(e);
+		}
+
+		private void OnSourceInitialized(object sender, EventArgs e)
+		{
+			// Call for resizing effects
+			//_hwndSource = (HwndSource)PresentationSource.FromVisual(this);
+
+			if (!(Properties.Settings.Default.Top == 0 &&
+				Properties.Settings.Default.Left == 0 &&
+				Properties.Settings.Default.Height == 0 &&
+				Properties.Settings.Default.Width == 0))
+			{
+				this.Top = Properties.Settings.Default.Top;
+				this.Left = Properties.Settings.Default.Left;
+				this.Height = Properties.Settings.Default.Height;
+				this.Width = Properties.Settings.Default.Width;
+			}
+
+			//// Very quick and dirty - but it does the job
+			//if (Properties.Settings.Default.Maximized)
+			//{
+			//	WindowState = WindowState.Maximized;
+			//}
+
+		}
+
+		private void wndMain_Closing(object sender, CancelEventArgs e)
+		{
+			if (WindowState == WindowState.Maximized)
+			{
+				Properties.Settings.Default.Top = RestoreBounds.Top;
+				Properties.Settings.Default.Left = RestoreBounds.Left;
+				Properties.Settings.Default.Height = RestoreBounds.Height;
+				Properties.Settings.Default.Width = RestoreBounds.Width;
+				//Properties.Settings.Default.Maximized = true;
+			}
+			else
+			{
+				Properties.Settings.Default.Top = this.Top;
+				Properties.Settings.Default.Left = this.Left;
+				Properties.Settings.Default.Height = this.Height;
+				Properties.Settings.Default.Width = this.Width;
+				//Properties.Settings.Default.Maximized = false;
+			}
+
+			Properties.Settings.Default.Save();
 		}
 	}
 

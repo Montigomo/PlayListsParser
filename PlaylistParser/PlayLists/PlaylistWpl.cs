@@ -35,6 +35,7 @@ namespace PlaylistParser.Playlist
 
 		public void SavePlaylist(bool overwrite)
 		{
+
 			if (String.IsNullOrWhiteSpace(PlaylistPath))
 				throw new ArgumentNullException(nameof(PlaylistPath));
 

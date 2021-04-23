@@ -33,7 +33,7 @@ namespace PlaylistParser.Playlist
 		/// <summary>
 		/// 
 		/// </summary>
-		void Repair();
+		void Repair(bool preview = false);
 
 		/// <summary>
 		/// 

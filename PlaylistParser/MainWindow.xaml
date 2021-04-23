@@ -11,7 +11,7 @@
     x:Class="PlaylistParser.MainWindow"
     mc:Ignorable="d"
     Title="MainWindow" Height="600" Width="1000" 
-    Loaded="wndMain_Loaded">
+    Loaded="wndMain_Loaded" Closing="wndMain_Closing">
 
 	<Window.Resources>
 		<local:NBoolYoBoolConverter x:Key="NBoolYoBoolConverter" />
@@ -98,14 +98,14 @@
 			<GridSplitter Grid.Row="1"
               ResizeDirection="Rows"
               Style="{StaticResource HorizontalGridSplitter}"
-              IsTabStop="False" />
+              IsTabStop="False" Height="2" />
 
 
 			<!--<xctk:PropertyGrid x:Name="PropertyGridMain" Grid.Column="3" Grid.Row="0" Margin="3"   Tag="toggle"/>-->
 			<DockPanel  Grid.Row="2" Background="#FFF0F0F0">
 
-				<TextBox x:Name="TextBoxLog" TextWrapping="Wrap" Margin="3" 
-							 IsReadOnly="True" FontSize="10" VerticalScrollBarVisibility="Auto" Width="970" />
+				<TextBox x:Name="TextBoxLog" TextWrapping="Wrap" Margin="3,1" 
+							 IsReadOnly="True" FontSize="10" VerticalScrollBarVisibility="Auto" />
 			</DockPanel>
 			
 		</Grid>
