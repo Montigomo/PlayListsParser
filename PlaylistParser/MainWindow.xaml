@@ -105,7 +105,13 @@
 			<DockPanel  Grid.Row="2" Background="#FFF0F0F0">
 
 				<TextBox x:Name="TextBoxLog" TextWrapping="Wrap" Margin="3,1" 
-							 IsReadOnly="True" FontSize="10" VerticalScrollBarVisibility="Auto" />
+							 IsReadOnly="True" FontSize="10" VerticalScrollBarVisibility="Auto" >
+					<TextBox.ContextMenu>
+						<ContextMenu>
+							<MenuItem x:Name="txtBoxClearMenuItem" Header="Clear" Click="txtBoxClearMenuItem_Click" />
+						</ContextMenu>
+					</TextBox.ContextMenu>
+				</TextBox>
 			</DockPanel>
 			
 		</Grid>

@@ -360,12 +360,12 @@ namespace PlaylistParser.Playlist
 		/// </summary>
 		/// <param name="item"></param>
 		/// <returns>true if valid false if not valid</returns>
-		private bool CheckPath(PlaylistItem item)
+		private bool CheckPath(PlaylistItem item, bool preview = false)
 		{
 			var result = File.Exists(item.AbsolutePath);
 
 			// detect if member Path absolute or not and then check it value for correct path
-			if (result)
+			if (result && !preview)
 			{
 				if(Path.IsPathRooted(item.Path))
 				{
@@ -402,13 +402,15 @@ namespace PlaylistParser.Playlist
 
 				cc = corrupted.Count();
 
-				RepairPath();
+				if(!preview)
+					RepairPath();
 
-				var todelete = Items.Where(item => !CheckPath(item));
+				var todelete = Items.Where(item => !CheckPath(item, preview));
 
 				dc = todelete.Count();
 
 				Console.WriteLine($@"Playlist {Title} repaired - {cc} removed - {dc}");
+
 				if (todelete.Count() > 0)
 				{
 					var t = String.Join("", todelete.Select(item => $@"{item.Path} {Environment.NewLine}"));

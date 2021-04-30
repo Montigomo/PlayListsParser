@@ -325,7 +325,7 @@ namespace PlaylistParser
 
 		private void Test()
 		{
-			var s10 = @"D:\music\Playlists\A.2005 - The Very Best Of Mozart.wpl";
+			var s10 = @"D:\music\Playlists\A.Pop.wpl";
 			//var s11 = @"D:\music\Playlists\A.Pop.m3u";
 			//var s12 = @"..\..\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
 			//var s13 = @"D:\music\Ajad\Reiki Music Collection - 5CD\Ajad - Reiki Music Vol.5\\Ajad - 01 - Night of Love.mp3";
@@ -338,19 +338,19 @@ namespace PlaylistParser
 
 
 			var playlist0 = PlaylistBase.Create(s10);
-			////var playlist1 = Library.FirstOrDefault(item => item.Title == "A.Pop");
+			//var playlist1 = Library.FirstOrDefault(item => item.Title == "A.Pop");
 
 			////var s0 = Path.GetPathRoot(playlist0.PlaylistPath);
 			////var s1 = Path.GetPathRoot(playlist1.PlaylistPath);
 
 			var t0 = playlist0.Check();
 
-			//var t1 = playlist0.Check();
+			var t1 = playlist0.Check();
 
-			//playlist0.Repair();
+			playlist0.Repair(false);
 			//playlist0.SavePlaylist();
 
-			//t1 = playlist0.Check();
+			var t2 = playlist0.Check();
 		}
 
 		#endregion
@@ -573,6 +573,11 @@ namespace PlaylistParser
 			}
 
 			Properties.Settings.Default.Save();
+		}
+
+		private void txtBoxClearMenuItem_Click(object sender, RoutedEventArgs e)
+		{
+			TextBoxLog.Clear();
 		}
 	}
 
